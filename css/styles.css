@@ -123,7 +123,7 @@ a:hover { color: var(--color-white); }
   display: none;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-4) var(--space-3) var(--space-3);
   background: #120824;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -291,6 +291,33 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   margin-bottom: 0;
 }
 
+.admin-status {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  background: rgba(18, 8, 36, 0.92);
+  z-index: 30;
+  color: var(--color-white);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-status span {
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-signout-button {
+  padding: 0.55rem 0.9rem;
+}
+
 .admin-add-game {
   position: relative;
 }
@@ -330,6 +357,24 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   box-shadow: var(--shadow-soft);
 }
 
+
+.menu-close-button {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-white);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .add-game-menu[hidden] {
   display: none;
 }
@@ -345,6 +390,71 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   margin: 0;
   font-size: 1rem;
   text-align: center;
+}
+
+.time-picker {
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  margin-top: var(--space-3);
+}
+
+.time-picker legend {
+  padding: 0 var(--space-2);
+  color: var(--color-gold);
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+}
+
+.time-input-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-3);
+}
+
+.time-input-group label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.time-input-group span {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--color-gold);
+}
+
+.time-input-group input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.time-input-group input:hover,
+.time-input-group input:focus {
+  border-color: var(--color-gold);
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.period-toggle {
+  align-self: end;
+  width: auto;
+  white-space: nowrap;
+  padding: 0.75rem 1.25rem;
+}
+
+
+#adminStatus[hidden] {
+  display: none !important;
 }
 
 .mini-calendar-nav {
@@ -393,6 +503,9 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   color: var(--color-obsidian);
 }
 
+
+
+
 .versus-inputs {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -431,6 +544,13 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   border: 1px solid var(--color-border);
 }
 
+.game-datetime {
+  margin: 0 0 var(--space-2) 0;
+  color: var(--color-gold);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+}
+
 .match-logos {
   display: flex;
   gap: var(--space-2);
@@ -443,6 +563,18 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   border-radius: 50%;
   border: 1px solid var(--color-border);
   object-fit: cover;
+}
+
+.game-delete-button {
+  justify-self: end;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
 }
 
 .calendar-controls {
@@ -471,6 +603,27 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.05);
   font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow: auto;
+}
+
+.calendar div strong {
+  display: block;
+  font-weight: 700;
+}
+
+.calendar div span {
+  display: block;
+  word-break: break-word;
+  line-height: 1.2;
+  font-size: 0.75rem;
+  color: var(--color-white);
+}
+
+.calendar-event {
+  display: block;
 }
 
 .calendar .day-name {

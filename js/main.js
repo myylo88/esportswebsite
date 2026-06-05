@@ -6,7 +6,10 @@ const adminDialog = document.querySelector("#adminDialog");
 const closeDialog = document.querySelector("#closeDialog");
 const adminForm = document.querySelector("#adminForm");
 const toast = document.querySelector("#toast");
+const adminStatus = document.querySelector("#adminStatus");
+const signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
+const savedCompetitiveGamesKey = "adminCompetitiveGamesDialTime";
 
 if (navToggle && navLinks) {
   navToggle.addEventListener("click", () => {
@@ -15,8 +18,14 @@ if (navToggle && navLinks) {
   });
 }
 
-if (adminButton && adminDialog) {
-  adminButton.addEventListener("click", () => adminDialog.showModal());
+if (adminButton) {
+  adminButton.addEventListener("click", () => {
+    if (isAdminLoggedIn()) {
+      signOutAdmin();
+    } else if (adminDialog) {
+      adminDialog.showModal();
+    }
+  });
 }
 
 if (closeDialog && adminDialog) {
@@ -53,9 +62,24 @@ function isAdminLoggedIn() {
 }
 
 function syncAdminControls() {
+  const loggedIn = isAdminLoggedIn();
   document.querySelectorAll("[data-admin-only]").forEach(control => {
-    control.hidden = !isAdminLoggedIn();
+    control.hidden = !loggedIn;
   });
+
+  if (adminButton) adminButton.textContent = loggedIn ? "Sign Out" : "Login";
+  if (adminStatus) adminStatus.hidden = !loggedIn;
+}
+
+function signOutAdmin() {
+  localStorage.removeItem("isCaptain");
+  syncAdminControls();
+  closeAddGameMenu();
+  showToast("Admin mode signed out.");
+}
+
+if (signOutButton) {
+  signOutButton.addEventListener("click", signOutAdmin);
 }
 
 const latestAnnouncementIso = "2026-06-04T09:00:00";
@@ -81,13 +105,7 @@ const schoolYearMonths = [
 ];
 
 const eventData = {
-  competitive: [
-    { date: "2026-09-12", time: "4:00 PM", title: "PHS vs. West Prep", description: "Opening varsity Rocket League match.", score: "Score will be added after the match.", homeLogo: "assets/falcon-logo.png", awayLogo: "assets/school-placeholder.png", awayAlt: "West Prep mascot placeholder" },
-    { date: "2026-10-19", time: "4:00 PM", title: "PHS vs. East Academy", description: "Regular season varsity Rocket League match.", score: "Score will be added after the match.", homeLogo: "assets/falcon-logo.png", awayLogo: "assets/school-placeholder.png", awayAlt: "East Academy mascot placeholder" },
-    { date: "2026-11-09", time: "4:30 PM", title: "PHS vs. North Tech", description: "Competitive match before winter break preparation.", score: "Score will be added after the match.", homeLogo: "assets/falcon-logo.png", awayLogo: "assets/school-placeholder.png", awayAlt: "North Tech mascot placeholder" },
-    { date: "2027-01-22", time: "4:00 PM", title: "PHS vs. Central High", description: "Mid-season Rocket League match.", score: "Score will be added after the match.", homeLogo: "assets/falcon-logo.png", awayLogo: "assets/school-placeholder.png", awayAlt: "Central High mascot placeholder" },
-    { date: "2027-03-05", time: "4:30 PM", title: "Playoff Qualifier", description: "Important qualifier match for postseason placement.", score: "Score will be added after the match.", homeLogo: "assets/falcon-logo.png", awayLogo: "assets/school-placeholder.png", awayAlt: "Opponent mascot placeholder" }
-  ],
+  competitive: [],
   casual: [
     { date: "2026-09-04", time: "3:00 PM", title: "Welcome Meeting", description: "Students meet the club and discuss games for the year." },
     { date: "2026-10-11", time: "3:00 PM", title: "Smash Tournament", description: "Casual bracket-style meeting for students interested in Smash." },
@@ -108,6 +126,10 @@ const gameCalendarTitle = document.querySelector("[data-game-calendar-title]");
 const gameDateInput = document.querySelector("[data-game-date]");
 const gamePrevButton = document.querySelector("[data-game-prev-month]");
 const gameNextButton = document.querySelector("[data-game-next-month]");
+const timeHourInput = document.querySelector("input[name='hour']");
+const timeMinuteInput = document.querySelector("input[name='minute']");
+const timePeriodToggle = document.querySelector("[data-period-toggle]");
+const timePeriodInput = document.querySelector("input[name='period']");
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
@@ -174,7 +196,8 @@ function renderCalendar(root, year, month, events) {
     if (matchingEvents.length > 0) {
       dayCell.classList.add("has-event");
       matchingEvents.forEach(event => {
-        dayCell.innerHTML += `<br><span>${escapeHtml(event.title)}</span>`;
+        const titleText = event.title ? `${escapeHtml(event.time)} — ${escapeHtml(event.title)}` : escapeHtml(event.time) || "Scheduled";
+        dayCell.innerHTML += `<div class="calendar-event"><span>${titleText}</span></div>`;
       });
     }
 
@@ -196,6 +219,7 @@ function renderScheduleLists() {
 
     list.innerHTML = "";
     if (filteredEvents.length === 0) {
+      if (type === "competitive" && status === "upcoming") return;
       list.innerHTML = `<article class="event-card"><div><h3>No ${status} ${type === "competitive" ? "games" : "meetings"} right now</h3><p>Events will appear here automatically based on the current date.</p></div></article>`;
       return;
     }
@@ -207,12 +231,27 @@ function renderScheduleLists() {
 function createGameCard(event, status) {
   const card = document.createElement("article");
   card.className = status === "completed" ? "event-card completed-game" : "event-card";
+  const isAdmin = isAdminLoggedIn();
   const logos = `<div class="match-logos"><img src="${event.homeLogo}" alt="PHS falcon logo"><img src="${event.awayLogo}" alt="${event.awayAlt}"></div>`;
 
   if (status === "completed") {
     card.innerHTML = `<div><details><summary><strong>${formatDate(event.date)} at ${escapeHtml(event.time)}</strong> — ${escapeHtml(event.title)}</summary><p><strong>Score:</strong> ${escapeHtml(event.score)}</p><p>${escapeHtml(event.description)}</p></details></div>${logos}`;
   } else {
-    card.innerHTML = `<div><h3>${formatDate(event.date)} at ${escapeHtml(event.time)}</h3><p>${escapeHtml(event.title)}</p><p>${escapeHtml(event.description)}</p></div>${logos}`;
+    card.innerHTML = `<div><p class="game-datetime"><strong>${formatDate(event.date)} at ${escapeHtml(event.time)}</strong></p><h3>${escapeHtml(event.title)}</h3><p>${escapeHtml(event.description)}</p></div>${logos}`;
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "btn btn-secondary game-delete-button";
+    deleteButton.type = "button";
+    deleteButton.dataset.adminOnly = "";
+    deleteButton.hidden = !isAdmin;
+    deleteButton.setAttribute("aria-label", "Delete upcoming game");
+    deleteButton.textContent = "✕";
+    deleteButton.addEventListener("click", () => {
+      eventData.competitive = eventData.competitive.filter(existing => existing !== event);
+      saveAdminCompetitiveGames();
+      renderScheduleLists();
+      renderSelectedMonth();
+    });
+    card.appendChild(deleteButton);
   }
 
   return card;
@@ -235,10 +274,20 @@ function setupAddGameMenu() {
   if (!addGameToggle || !addGameMenu || !gameCalendarRoot) return;
 
   addGameToggle.addEventListener("click", () => {
-    const isOpen = addGameMenu.hidden;
-    addGameMenu.hidden = !isOpen;
-    addGameToggle.setAttribute("aria-expanded", String(isOpen));
-    if (isOpen) renderGamePickerMonth();
+    if (addGameMenu.hidden) {
+      openAddGameMenu();
+    } else {
+      closeAddGameMenu();
+    }
+  });
+
+
+  document.addEventListener("click", event => {
+    if (addGameMenu.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && !addGameMenu.contains(target) && !addGameToggle.contains(target)) {
+      closeAddGameMenu();
+    }
   });
 
   gamePrevButton?.addEventListener("click", () => {
@@ -251,24 +300,33 @@ function setupAddGameMenu() {
     renderGamePickerMonth();
   });
 
+  timePeriodToggle?.addEventListener("click", () => {
+    const nextPeriod = timePeriodToggle.textContent === "PM" ? "AM" : "PM";
+    timePeriodToggle.textContent = nextPeriod;
+    if (timePeriodInput) timePeriodInput.value = nextPeriod;
+  });
+
   addGameMenu.addEventListener("submit", event => {
     event.preventDefault();
     if (!isAdminLoggedIn()) return;
 
     const formData = new FormData(addGameMenu);
     const date = String(formData.get("date") || "");
+    const hour = String(formData.get("hour") || "").trim();
+    const minute = String(formData.get("minute") || "").trim().padStart(2, "0");
+    const period = String(formData.get("period") || "PM").trim();
     const schoolOne = String(formData.get("schoolOne") || "").trim();
     const schoolTwo = String(formData.get("schoolTwo") || "").trim();
     const notes = String(formData.get("notes") || "").trim();
 
-    if (!date || !schoolOne || !schoolTwo) {
-      showToast("Choose a date and enter both schools.");
+    if (!date || !hour || !minute || !schoolOne || !schoolTwo) {
+      showToast("Choose a date, time, and enter both schools.");
       return;
     }
 
     const game = {
       date,
-      time: "4:00 PM",
+      time: `${hour}:${minute} ${period}`,
       title: `${schoolOne} vs. ${schoolTwo}`,
       description: notes || "Varsity Rocket League match.",
       score: "Score will be added after the match.",
@@ -283,13 +341,32 @@ function setupAddGameMenu() {
     renderScheduleLists();
     renderSelectedMonth();
     addGameMenu.reset();
+    resetTimePicker();
     clearGamePickerSelection();
-    addGameMenu.hidden = true;
-    addGameToggle.setAttribute("aria-expanded", "false");
+    closeAddGameMenu();
     showToast("Game added to the schedule.");
   });
 
   renderGamePickerMonth();
+  resetTimePicker();
+}
+
+function openAddGameMenu() {
+  addGameMenu.hidden = false;
+  addGameToggle.setAttribute("aria-expanded", "true");
+  renderGamePickerMonth();
+}
+
+function closeAddGameMenu() {
+  addGameMenu.hidden = true;
+  addGameToggle.setAttribute("aria-expanded", "false");
+}
+
+function resetTimePicker() {
+  if (timeHourInput) timeHourInput.value = "4";
+  if (timeMinuteInput) timeMinuteInput.value = "00";
+  if (timePeriodToggle) timePeriodToggle.textContent = "PM";
+  if (timePeriodInput) timePeriodInput.value = "PM";
 }
 
 function renderGamePickerMonth() {
@@ -343,16 +420,16 @@ function clearGamePickerSelection() {
 
 function loadSavedCompetitiveGames() {
   try {
-    const savedGames = JSON.parse(localStorage.getItem("adminCompetitiveGames") || "[]");
+    const savedGames = JSON.parse(localStorage.getItem(savedCompetitiveGamesKey) || "[]");
     if (Array.isArray(savedGames)) eventData.competitive.push(...savedGames);
   } catch {
-    localStorage.removeItem("adminCompetitiveGames");
+    localStorage.removeItem(savedCompetitiveGamesKey);
   }
 }
 
 function saveAdminCompetitiveGames() {
   const adminGames = eventData.competitive.filter(event => event.adminAdded);
-  localStorage.setItem("adminCompetitiveGames", JSON.stringify(adminGames));
+  localStorage.setItem(savedCompetitiveGamesKey, JSON.stringify(adminGames));
 }
 
 function getDateValue(year, month, day) {
