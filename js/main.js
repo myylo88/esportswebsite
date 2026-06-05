@@ -174,7 +174,7 @@ function renderCalendar(root, year, month, events) {
     if (matchingEvents.length > 0) {
       dayCell.classList.add("has-event");
       matchingEvents.forEach(event => {
-        dayCell.innerHTML += `<br><span class="calendar-event-title">${escapeHtml(event.title)}</span><span class="calendar-event-time">${escapeHtml(event.time)}</span>`;
+        dayCell.innerHTML += `<br><span>${escapeHtml(event.title)}</span>`;
       });
     }
 
@@ -259,17 +259,16 @@ function setupAddGameMenu() {
     const date = String(formData.get("date") || "");
     const schoolOne = String(formData.get("schoolOne") || "").trim();
     const schoolTwo = String(formData.get("schoolTwo") || "").trim();
-    const time = formatTimeInput(String(formData.get("time") || ""));
     const notes = String(formData.get("notes") || "").trim();
 
-    if (!date || !schoolOne || !schoolTwo || !time) {
-      showToast("Choose a date, enter both schools, and set a start time.");
+    if (!date || !schoolOne || !schoolTwo) {
+      showToast("Choose a date and enter both schools.");
       return;
     }
 
     const game = {
       date,
-      time,
+      time: "4:00 PM",
       title: `${schoolOne} vs. ${schoolTwo}`,
       description: notes || "Varsity Rocket League match.",
       score: "Score will be added after the match.",
@@ -363,14 +362,6 @@ function getDateValue(year, month, day) {
 function formatDate(date) {
   const parsedDate = new Date(date + "T12:00:00");
   return parsedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-}
-
-function formatTimeInput(time) {
-  const [hourValue, minuteValue] = time.split(":").map(Number);
-  if (!Number.isInteger(hourValue) || !Number.isInteger(minuteValue)) return "";
-  const period = hourValue >= 12 ? "PM" : "AM";
-  const hour = hourValue % 12 || 12;
-  return `${hour}:${String(minuteValue).padStart(2, "0")} ${period}`;
 }
 
 function escapeHtml(value) {
