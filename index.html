@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css"><meta name="description" content="Learn about the PHS esports club, varsity Rocket League team, announcements, meetings, and sign-up options."><meta property="og:title" content="Esports Team & Club | Home"><meta property="og:description" content="Learn about the PHS esports club, varsity Rocket League team, announcements, meetings, and sign-up options."><meta property="og:type" content="website"><title>Esports Team & Club | Home</title></head><body class=""><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <nav class="navbar" aria-label="Main navigation">
+    <a class="logo" href="index.html"><span class="logo-mark">E</span><span>Esports Team & Club</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="about.html">About Us</a>
+      <a href="competitive.html">Competitive</a>
+      <a href="casual.html">Casual</a>
+      <a class="announcement-link" href="announcements.html">Announcements <span class="new-announcement-badge" data-announcement-badge aria-label="New announcement">●</span></a>
+      <button class="admin-button" type="button">Login</button>
+    </div>
+  </nav>
+</header>
+<dialog id="adminDialog">
+  <h2>Captain Login</h2>
+  <p>This demo login shows a success message. For real private editing, use a backend or CMS.</p>
+  <form id="adminForm">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <p class="form-message" aria-live="polite"></p>
+    <button class="btn btn-primary" type="submit">Log in</button>
+    <button class="btn btn-secondary" id="closeDialog" type="button">Cancel</button>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<main id="main">
+<section class="hero home-hero">
+  <div>
+    <p class="eyebrow">PHS Esports</p>
+    <h1>PHS Esports Club</h1>
+    <p class="lede">Compete, play, and build community through gaming. Our program includes a varsity Rocket League team for competitive players and a casual club for students who want to play, discuss, and explore games together.</p>
+    <div class="button-row">
+      <a class="btn btn-primary" href="competitive.html">Explore Competitive Team</a>
+      <a class="btn btn-secondary" href="casual.html">Explore Casual Club</a>
+    </div>
+  </div>
+  <img class="hero-image" src="assets/falcon-logo.png" alt="Falcon Esports logo" loading="lazy">
+</section>
+
+<section class="section">
+  <h2>Choose Your Path</h2>
+  <div class="button-row">
+    <a class="choice-card" href="competitive.html">
+      <img src="assets/smash-home-varsity.jpeg" alt="Multiplayer game scene for varsity esports" loading="lazy">
+      <div class="choice-card-content"><h3>Varsity Rocket League</h3><p>View schedules, highlights, tryout information, and team sign-up details.</p></div>
+    </a>
+    <a class="choice-card" href="casual.html">
+      <img src="assets/smash-home-casual.jpeg" alt="Casual multiplayer game scene" loading="lazy">
+      <div class="choice-card-content"><h3>Casual Club</h3><p>Find meeting dates, games, casual events, and suggestion forms.</p></div>
+    </a>
+  </div>
+</section>
+
+<section class="section card-grid">
+  <article class="card">
+    <h2>General Information</h2>
+    <p>The club welcomes students who want to compete, learn, or enjoy games with classmates in a structured school community.</p>
+  </article>
+  <article class="card quick-signup-card">
+    <h2>Quick Sign-Up</h2>
+    <p>Interested in joining the varsity team or casual club? Use the official form to submit your information and interest.</p>
+    <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSc0jjVdnKvH2-rG9U5RFWdStTonzbW7cramWzIyfkWg0aglSw/viewform" target="_blank" rel="noopener">Open Sign-Up Form</a>
+  </article>
+  <article class="card">
+    <img class="inline-image" src="assets/club-meeting.jpeg" alt="Students watching a multiplayer game together" loading="lazy">
+  </article>
+</section>
+
+<section class="section">
+  <article class="card announcement priority-announcement">
+    <h2>Recent Announcement</h2>
+    <p><strong>June Update:</strong> Varsity tryout information and casual meeting suggestions are now open.</p>
+    <a href="announcements.html">View all announcements</a>
+  </article>
+</section>
+
+<section class="section wide-faq-section">
+  <article class="card faq wide-faq-card">
+    <h2>Common Q/As</h2>
+    <details><summary>Do you need to be on the varsity team to join?</summary><p>No. Casual club members can join without varsity tryouts.</p></details>
+    <details><summary>When does the esports club usually meet?</summary><p>Meeting times are posted on the casual club schedule page and updated when the school-year schedule changes.</p></details>
+    <details><summary>What games does the casual club play?</summary><p>The casual club may play games like Smash, Mario Kart, Minecraft, and other student-suggested games.</p></details>
+    <details><summary>Do you have to be highly skilled at video games?</summary><p>No. The casual club is open to students of all skill levels. Competitive varsity tryouts are more skill-based.</p></details>
+    <details><summary>How do I join or show interest?</summary><p>Use the sign-up form linked on the varsity or casual sign-up pages.</p></details>
+  </article>
+</section>
+</main>
+<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer><script src="js/main.js"></script></body></html>

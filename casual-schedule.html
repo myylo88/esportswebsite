@@ -1,0 +1,29 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css"><meta name="description" content="Upcoming and completed PHS esports club meeting dates, planned games, and monthly calendar."><meta property="og:title" content="Casual Club Meeting Schedule | PHS Esports"><meta property="og:description" content="Upcoming and completed PHS esports club meeting dates, planned games, and monthly calendar."><meta property="og:type" content="website"><title>Casual Club Meeting Schedule | PHS Esports</title></head><body class="theme-casual"><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <nav class="navbar" aria-label="Main navigation">
+    <a class="logo" href="index.html"><span class="logo-mark">E</span><span>Esports Team & Club</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="about.html">About Us</a>
+      <a href="competitive.html">Competitive</a>
+      <a href="casual.html">Casual</a>
+      <a class="announcement-link" href="announcements.html">Announcements <span class="new-announcement-badge" data-announcement-badge aria-label="New announcement">●</span></a>
+      <button class="admin-button" type="button">Login</button>
+    </div>
+  </nav>
+</header>
+<dialog id="adminDialog">
+  <h2>Captain Login</h2>
+  <p>This demo login shows a success message. For real private editing, use a backend or CMS.</p>
+  <form id="adminForm">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <p class="form-message" aria-live="polite"></p>
+    <button class="btn btn-primary" type="submit">Log in</button>
+    <button class="btn btn-secondary" id="closeDialog" type="button">Cancel</button>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div><main id="main"><section class="hero"><div><p class="eyebrow">Club Schedule</p><h1>Casual Meeting Schedule</h1><p class="lede">Check what games are planned for each meeting and how far apart meetings are on the calendar.</p></div><img class="hero-image" src="assets/smash-gameplay.png" alt="Casual multiplayer game scene" loading="lazy"></section><section class="section"><h2>Upcoming Meetings</h2><div class="schedule-list" data-event-list="casual" data-event-status="upcoming"></div><h2>Completed Meetings</h2><div class="schedule-list" data-event-list="casual" data-event-status="completed"></div><h2>Calendar View</h2><div class="calendar-controls"><button class="btn btn-secondary" type="button" data-prev-month>← Previous</button><h3 class="calendar-title" data-calendar-title>September 2026</h3><button class="btn btn-secondary" type="button" data-next-month>Next →</button></div><div class="calendar" data-calendar="casual" aria-label="Casual club calendar"></div></section></main><footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer><script src="js/main.js"></script></body></html>
