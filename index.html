@@ -81,12 +81,18 @@
 
 <section class="section wide-faq-section">
   <article class="card faq wide-faq-card">
-    <h2>Common Q/As</h2>
-    <details><summary>Do you need to be on the varsity team to join?</summary><p>No. Casual club members can join without varsity tryouts.</p></details>
-    <details><summary>When does the esports club usually meet?</summary><p>Meeting times are posted on the casual club schedule page and updated when the school-year schedule changes.</p></details>
-    <details><summary>What games does the casual club play?</summary><p>The casual club may play games like Smash, Mario Kart, Minecraft, and other student-suggested games.</p></details>
-    <details><summary>Do you have to be highly skilled at video games?</summary><p>No. The casual club is open to students of all skill levels. Competitive varsity tryouts are more skill-based.</p></details>
-    <details><summary>How do I join or show interest?</summary><p>Use the sign-up form linked on the varsity or casual sign-up pages.</p></details>
+    <div class="schedule-heading-row">
+      <h2>Common Q/As</h2>
+      <div class="admin-add-qa" data-admin-only hidden>
+        <button class="icon-button" type="button" aria-label="Add Q/A" aria-expanded="false" data-add-qa-toggle>+</button>
+        <form class="add-game-menu add-qa-menu" data-add-qa-menu hidden>
+          <label><span>Question</span><textarea name="qaQuestion" rows="2" required></textarea></label>
+          <label><span>Answer</span><textarea name="qaAnswer" rows="4" required></textarea></label>
+          <button class="btn btn-primary" type="submit">Add Q/A</button>
+        </form>
+      </div>
+    </div>
+    <div class="faq-list" data-faq-list></div>
   </article>
 </section>
 </main>

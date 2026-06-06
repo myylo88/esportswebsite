@@ -11,6 +11,14 @@ let signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
 const savedEventsKey = "adminEventScheduleData";
 
+const faqData = [
+  { question: "Do you need to be on the varsity team to join?", answer: "No. Casual club members can join without varsity tryouts.", adminAdded: false },
+  { question: "When does the esports club usually meet?", answer: "Meeting times are posted on the casual club schedule page and updated when the school-year schedule changes.", adminAdded: false },
+  { question: "What games does the casual club play?", answer: "The casual club may play games like Smash, Mario Kart, Minecraft, and other student-suggested games.", adminAdded: false },
+  { question: "Do you have to be highly skilled at video games?", answer: "No. The casual club is open to students of all skill levels. Competitive varsity tryouts are more skill-based.", adminAdded: false },
+  { question: "How do I join or show interest?", answer: "Use the sign-up form linked on the varsity or casual sign-up pages.", adminAdded: false }
+];
+
 ensureAdminUI();
 
 function ensureAdminUI() {
@@ -115,6 +123,7 @@ function syncAdminControls() {
   if (adminButton) adminButton.textContent = loggedIn ? "Sign Out" : "Login";
   if (adminStatus) adminStatus.hidden = !loggedIn;
   renderScheduleLists();
+  renderFAQList();
 }
 
 function signOutAdmin() {
@@ -176,10 +185,17 @@ const timeHourInput = document.querySelector("input[name='hour']");
 const timeMinuteInput = document.querySelector("input[name='minute']");
 const timePeriodToggle = document.querySelector("[data-period-toggle]");
 const timePeriodInput = document.querySelector("input[name='period']");
+const faqListRoot = document.querySelector("[data-faq-list]");
+const addQAToggle = document.querySelector("[data-add-qa-toggle]");
+const addQAMenu = document.querySelector("[data-add-qa-menu]");
+const qaQuestionInput = document.querySelector("textarea[name='qaQuestion']");
+const qaAnswerInput = document.querySelector("textarea[name='qaAnswer']");
+const qaSaveKey = "adminFAQData";
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
 loadSavedAdminEvents();
+loadSavedFAQ();
 syncAdminControls();
 
 if (calendarRoot) {
@@ -195,7 +211,9 @@ if (calendarRoot) {
 }
 
 setupAddGameMenu();
+setupAddQAMenu();
 renderScheduleLists();
+renderFAQList();
 
 function getStartingMonthIndex() {
   const now = new Date();
@@ -335,6 +353,96 @@ function createMeetingCard(event, status) {
   }
 
   return card;
+}
+
+function renderFAQList() {
+  if (!faqListRoot) return;
+  faqListRoot.innerHTML = "";
+  faqData.forEach((item, index) => {
+    const detail = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = item.question;
+    const answer = document.createElement("p");
+    answer.textContent = item.answer;
+    detail.append(summary, answer);
+
+    if (isAdminLoggedIn()) {
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "btn btn-secondary faq-delete-button";
+      deleteButton.type = "button";
+      deleteButton.dataset.adminOnly = "";
+      deleteButton.setAttribute("aria-label", "Delete Q/A");
+      deleteButton.textContent = "✕";
+      deleteButton.addEventListener("click", () => {
+        faqData.splice(index, 1);
+        saveAdminFAQ();
+        renderFAQList();
+      });
+      detail.appendChild(deleteButton);
+    }
+
+    faqListRoot.appendChild(detail);
+  });
+}
+
+function setupAddQAMenu() {
+  if (!addQAToggle || !addQAMenu) return;
+
+  addQAToggle.addEventListener("click", () => {
+    if (addQAMenu.hidden) {
+      addQAMenu.hidden = false;
+      addQAToggle.setAttribute("aria-expanded", "true");
+    } else {
+      addQAMenu.hidden = true;
+      addQAToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (!addQAMenu || addQAMenu.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && !addQAMenu.contains(target) && !addQAToggle.contains(target)) {
+      addQAMenu.hidden = true;
+      addQAToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  addQAMenu.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!isAdminLoggedIn()) return;
+    const question = String(qaQuestionInput?.value || "").trim();
+    const answer = String(qaAnswerInput?.value || "").trim();
+    if (!question || !answer) {
+      showToast("Enter both a question and an answer.");
+      return;
+    }
+
+    faqData.push({ question, answer, adminAdded: true });
+    saveAdminFAQ();
+    renderFAQList();
+    addQAMenu.reset();
+    addQAMenu.hidden = true;
+    addQAToggle.setAttribute("aria-expanded", "false");
+    showToast("Q/A added.");
+  });
+}
+
+function loadSavedFAQ() {
+  if (!faqListRoot) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(qaSaveKey) || "[]");
+    if (Array.isArray(saved)) {
+      faqData.push(...saved.map(item => ({ ...item, adminAdded: true })));
+    }
+  } catch {
+    localStorage.removeItem(qaSaveKey);
+  }
+}
+
+function saveAdminFAQ() {
+  if (!faqListRoot) return;
+  const adminFaqs = faqData.filter(item => item.adminAdded);
+  localStorage.setItem(qaSaveKey, JSON.stringify(adminFaqs));
 }
 
 function setupAddGameMenu() {
