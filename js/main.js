@@ -69,6 +69,7 @@ function syncAdminControls() {
 
   if (adminButton) adminButton.textContent = loggedIn ? "Sign Out" : "Login";
   if (adminStatus) adminStatus.hidden = !loggedIn;
+  renderScheduleLists();
 }
 
 function signOutAdmin() {
@@ -237,21 +238,24 @@ function createGameCard(event, status) {
   if (status === "completed") {
     card.innerHTML = `<div><details><summary><strong>${formatDate(event.date)} at ${escapeHtml(event.time)}</strong> — ${escapeHtml(event.title)}</summary><p><strong>Score:</strong> ${escapeHtml(event.score)}</p><p>${escapeHtml(event.description)}</p></details></div>${logos}`;
   } else {
-    card.innerHTML = `<div><p class="game-datetime"><strong>${formatDate(event.date)} at ${escapeHtml(event.time)}</strong></p><h3>${escapeHtml(event.title)}</h3><p>${escapeHtml(event.description)}</p></div>${logos}`;
-    const deleteButton = document.createElement("button");
-    deleteButton.className = "btn btn-secondary game-delete-button";
-    deleteButton.type = "button";
-    deleteButton.dataset.adminOnly = "";
-    deleteButton.hidden = !isAdmin;
-    deleteButton.setAttribute("aria-label", "Delete upcoming game");
-    deleteButton.textContent = "✕";
-    deleteButton.addEventListener("click", () => {
-      eventData.competitive = eventData.competitive.filter(existing => existing !== event);
-      saveAdminCompetitiveGames();
-      renderScheduleLists();
-      renderSelectedMonth();
-    });
-    card.appendChild(deleteButton);
+    const timeText = escapeHtml(formatTime(event.time));
+    const matchupText = escapeHtml(event.title || `${event.schoolOne || ""}${event.schoolOne && event.schoolTwo ? " vs " : ""}${event.schoolTwo || ""}`.trim() || "Matchup TBD");
+    card.innerHTML = `<div><p class="game-datetime"><strong>${formatDate(event.date)} at ${timeText}</strong></p><p class="game-matchup">${matchupText}</p><p>${escapeHtml(event.description)}</p></div>${logos}`;
+    if (isAdmin) {
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "btn btn-secondary game-delete-button";
+      deleteButton.type = "button";
+      deleteButton.dataset.adminOnly = "";
+      deleteButton.setAttribute("aria-label", "Delete upcoming game");
+      deleteButton.textContent = "✕";
+      deleteButton.addEventListener("click", () => {
+        eventData.competitive = eventData.competitive.filter(existing => existing !== event);
+        saveAdminCompetitiveGames();
+        renderScheduleLists();
+        renderSelectedMonth();
+      });
+      card.appendChild(deleteButton);
+    }
   }
 
   return card;
@@ -441,8 +445,27 @@ function formatDate(date) {
   return parsedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+function formatTime(time) {
+  const trimmed = String(time || "").trim();
+  if (!trimmed) return "TBD";
+
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
+  if (!match) return trimmed;
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const period = match[3] ? match[3].toUpperCase() : hour >= 12 ? "PM" : "AM";
+
+  if (!match[3]) {
+    if (hour > 12) hour -= 12;
+    if (hour === 0) hour = 12;
+  }
+
+  return `${hour}:${minute} ${period}`;
+}
+
 function escapeHtml(value) {
-  const template = document.createElement("template");
-  template.textContent = value;
-  return template.innerHTML;
+  const container = document.createElement("div");
+  container.textContent = String(value || "");
+  return container.innerHTML;
 }

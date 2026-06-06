@@ -577,6 +577,12 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   place-items: center;
 }
 
+.game-matchup {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .calendar-controls {
   display: flex;
   align-items: center;
