@@ -5,11 +5,56 @@ const adminButton = document.querySelector(".admin-button");
 const adminDialog = document.querySelector("#adminDialog");
 const closeDialog = document.querySelector("#closeDialog");
 const adminForm = document.querySelector("#adminForm");
-const toast = document.querySelector("#toast");
-const adminStatus = document.querySelector("#adminStatus");
-const signOutButton = document.querySelector("#signOutButton");
+let toast = document.querySelector("#toast");
+let adminStatus = document.querySelector("#adminStatus");
+let signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
-const savedCompetitiveGamesKey = "adminCompetitiveGamesDialTime";
+const savedEventsKey = "adminEventScheduleData";
+
+ensureAdminUI();
+
+function ensureAdminUI() {
+  if (!document.querySelector("#toast")) {
+    const toastEl = document.createElement("div");
+    toastEl.className = "toast";
+    toastEl.id = "toast";
+    toastEl.setAttribute("role", "status");
+    toastEl.setAttribute("aria-live", "polite");
+    document.body.appendChild(toastEl);
+  }
+
+  if (!document.querySelector("#adminStatus")) {
+    const adminStatusEl = document.createElement("div");
+    adminStatusEl.className = "admin-status";
+    adminStatusEl.id = "adminStatus";
+    adminStatusEl.hidden = true;
+
+    const label = document.createElement("span");
+    label.textContent = "ADMIN MODE";
+
+    const button = document.createElement("button");
+    button.className = "btn btn-secondary admin-signout-button";
+    button.type = "button";
+    button.id = "signOutButton";
+    button.textContent = "Sign Out";
+
+    adminStatusEl.append(label, button);
+    document.body.appendChild(adminStatusEl);
+  }
+
+  if (!document.querySelector("#signOutButton")) {
+    const button = document.createElement("button");
+    button.className = "btn btn-secondary admin-signout-button";
+    button.type = "button";
+    button.id = "signOutButton";
+    button.textContent = "Sign Out";
+    document.querySelector("#adminStatus")?.appendChild(button);
+  }
+
+  toast = document.querySelector("#toast");
+  adminStatus = document.querySelector("#adminStatus");
+  signOutButton = document.querySelector("#signOutButton");
+}
 
 if (navToggle && navLinks) {
   navToggle.addEventListener("click", () => {
@@ -134,7 +179,7 @@ const timePeriodInput = document.querySelector("input[name='period']");
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
-loadSavedCompetitiveGames();
+loadSavedAdminEvents();
 syncAdminControls();
 
 if (calendarRoot) {
@@ -250,7 +295,7 @@ function createGameCard(event, status) {
       deleteButton.textContent = "✕";
       deleteButton.addEventListener("click", () => {
         eventData.competitive = eventData.competitive.filter(existing => existing !== event);
-        saveAdminCompetitiveGames();
+        saveAdminEvents();
         renderScheduleLists();
         renderSelectedMonth();
       });
@@ -263,12 +308,30 @@ function createGameCard(event, status) {
 
 function createMeetingCard(event, status) {
   const card = document.createElement("article");
-  card.className = "event-card";
+  card.className = status === "completed" ? "event-card completed-game" : "event-card";
+  const isAdmin = isAdminLoggedIn();
 
   if (status === "completed") {
     card.innerHTML = `<div><details><summary><strong>${formatDate(event.date)} at ${escapeHtml(event.time)}</strong> — ${escapeHtml(event.title)}</summary><p>${escapeHtml(event.description)}</p></details></div>`;
   } else {
-    card.innerHTML = `<div><h3>${formatDate(event.date)} at ${escapeHtml(event.time)}</h3><p>${escapeHtml(event.title)}</p><p>${escapeHtml(event.description)}</p></div>`;
+    const timeText = escapeHtml(formatTime(event.time));
+    const titleText = escapeHtml(event.title || "Meeting TBD");
+    card.innerHTML = `<div><p class="game-datetime"><strong>${formatDate(event.date)} at ${timeText}</strong></p><p class="game-matchup">${titleText}</p><p>${escapeHtml(event.description)}</p></div>`;
+    if (isAdmin) {
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "btn btn-secondary game-delete-button";
+      deleteButton.type = "button";
+      deleteButton.dataset.adminOnly = "";
+      deleteButton.setAttribute("aria-label", "Delete upcoming meeting");
+      deleteButton.textContent = "✕";
+      deleteButton.addEventListener("click", () => {
+        eventData.casual = eventData.casual.filter(existing => existing !== event);
+        saveAdminEvents();
+        renderScheduleLists();
+        renderSelectedMonth();
+      });
+      card.appendChild(deleteButton);
+    }
   }
 
   return card;
@@ -324,31 +387,42 @@ function setupAddGameMenu() {
     const notes = String(formData.get("notes") || "").trim();
 
     if (!date || !hour || !minute || !schoolOne || !schoolTwo) {
-      showToast("Choose a date, time, and enter both schools.");
+      showToast("Choose a date, time, and enter both fields.");
       return;
     }
+
+    const eventType = calendarRoot?.dataset.calendar || "competitive";
+    const eventTitle = eventType === "competitive"
+      ? `${schoolOne} vs. ${schoolTwo}`
+      : `${schoolOne}${schoolTwo ? ` — ${schoolTwo}` : ""}`;
+    const eventDescription = notes || (eventType === "competitive" ? "Varsity Rocket League match." : "Casual club meeting.");
 
     const game = {
       date,
       time: `${hour}:${minute} ${period}`,
-      title: `${schoolOne} vs. ${schoolTwo}`,
-      description: notes || "Varsity Rocket League match.",
-      score: "Score will be added after the match.",
-      homeLogo: "assets/falcon-logo.png",
-      awayLogo: "assets/school-placeholder.png",
-      awayAlt: `${schoolTwo} mascot placeholder`,
+      title: eventTitle,
+      description: eventDescription,
       adminAdded: true
     };
 
-    eventData.competitive.push(game);
-    saveAdminCompetitiveGames();
+    if (eventType === "competitive") {
+      Object.assign(game, {
+        score: "Score will be added after the match.",
+        homeLogo: "assets/falcon-logo.png",
+        awayLogo: "assets/school-placeholder.png",
+        awayAlt: `${schoolTwo} mascot placeholder`
+      });
+    }
+
+    eventData[eventType].push(game);
+    saveAdminEvents();
     renderScheduleLists();
     renderSelectedMonth();
     addGameMenu.reset();
     resetTimePicker();
     clearGamePickerSelection();
     closeAddGameMenu();
-    showToast("Game added to the schedule.");
+    showToast(eventType === "competitive" ? "Game added to the schedule." : "Meeting added to the schedule.");
   });
 
   renderGamePickerMonth();
@@ -356,12 +430,14 @@ function setupAddGameMenu() {
 }
 
 function openAddGameMenu() {
+  if (!addGameMenu || !addGameToggle) return;
   addGameMenu.hidden = false;
   addGameToggle.setAttribute("aria-expanded", "true");
   renderGamePickerMonth();
 }
 
 function closeAddGameMenu() {
+  if (!addGameMenu || !addGameToggle) return;
   addGameMenu.hidden = true;
   addGameToggle.setAttribute("aria-expanded", "false");
 }
@@ -422,18 +498,26 @@ function clearGamePickerSelection() {
   });
 }
 
-function loadSavedCompetitiveGames() {
+function loadSavedAdminEvents() {
   try {
-    const savedGames = JSON.parse(localStorage.getItem(savedCompetitiveGamesKey) || "[]");
-    if (Array.isArray(savedGames)) eventData.competitive.push(...savedGames);
+    const savedData = JSON.parse(localStorage.getItem(savedEventsKey) || "{}");
+    if (Array.isArray(savedData)) {
+      eventData.competitive.push(...savedData);
+    } else {
+      if (Array.isArray(savedData.competitive)) eventData.competitive.push(...savedData.competitive);
+      if (Array.isArray(savedData.casual)) eventData.casual.push(...savedData.casual);
+    }
   } catch {
-    localStorage.removeItem(savedCompetitiveGamesKey);
+    localStorage.removeItem(savedEventsKey);
   }
 }
 
-function saveAdminCompetitiveGames() {
-  const adminGames = eventData.competitive.filter(event => event.adminAdded);
-  localStorage.setItem(savedCompetitiveGamesKey, JSON.stringify(adminGames));
+function saveAdminEvents() {
+  const adminEvents = {
+    competitive: eventData.competitive.filter(event => event.adminAdded),
+    casual: eventData.casual.filter(event => event.adminAdded)
+  };
+  localStorage.setItem(savedEventsKey, JSON.stringify(adminEvents));
 }
 
 function getDateValue(year, month, day) {
