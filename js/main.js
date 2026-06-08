@@ -11,13 +11,7 @@ let signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
 const savedEventsKey = "adminEventScheduleData";
 
-const faqData = [
-  { question: "Do you need to be on the varsity team to join?", answer: "No. Casual club members can join without varsity tryouts.", adminAdded: false },
-  { question: "When does the esports club usually meet?", answer: "Meeting times are posted on the casual club schedule page and updated when the school-year schedule changes.", adminAdded: false },
-  { question: "What games does the casual club play?", answer: "The casual club may play games like Smash, Mario Kart, Minecraft, and other student-suggested games.", adminAdded: false },
-  { question: "Do you have to be highly skilled at video games?", answer: "No. The casual club is open to students of all skill levels. Competitive varsity tryouts are more skill-based.", adminAdded: false },
-  { question: "How do I join or show interest?", answer: "Use the sign-up form linked on the varsity or casual sign-up pages.", adminAdded: false }
-];
+const faqData = [];
 
 ensureAdminUI();
 
@@ -161,13 +155,7 @@ const schoolYearMonths = [
 
 const eventData = {
   competitive: [],
-  casual: [
-    { date: "2026-09-04", time: "3:00 PM", title: "Welcome Meeting", description: "Students meet the club and discuss games for the year." },
-    { date: "2026-10-11", time: "3:00 PM", title: "Smash Tournament", description: "Casual bracket-style meeting for students interested in Smash." },
-    { date: "2026-11-18", time: "3:00 PM", title: "Mario Kart Meeting", description: "Casual meeting focused on racing games and party games." },
-    { date: "2027-02-08", time: "3:00 PM", title: "Minecraft Build Night", description: "Students collaborate on a creative building challenge." },
-    { date: "2027-04-25", time: "3:00 PM", title: "Suggestion Day", description: "Members vote on games and activities for future meetings." }
-  ]
+  casual: []
 };
 
 const calendarRoot = document.querySelector("[data-calendar]");
@@ -494,10 +482,28 @@ function setupAddGameMenu() {
     const schoolTwo = String(formData.get("schoolTwo") || "").trim();
     const notes = String(formData.get("notes") || "").trim();
 
+    const hourNum = Number(hour);
+    const minuteNum = Number(minute);
+
     if (!date || !hour || !minute || !schoolOne || !schoolTwo) {
       showToast("Choose a date, time, and enter both fields.");
       return;
     }
+
+    if (
+      Number.isNaN(hourNum) ||
+      Number.isNaN(minuteNum) ||
+      hourNum < 1 ||
+      hourNum > 12 ||
+      minuteNum < 0 ||
+      minuteNum > 59
+    ) {
+      showToast("Enter a valid time: hour 1–12 and minute 0–59.");
+      return;
+    }
+
+    const normalizedHour = String(hourNum);
+    const normalizedMinute = String(minuteNum).padStart(2, "0");
 
     const eventType = calendarRoot?.dataset.calendar || "competitive";
     const eventTitle = eventType === "competitive"
@@ -507,7 +513,7 @@ function setupAddGameMenu() {
 
     const game = {
       date,
-      time: `${hour}:${minute} ${period}`,
+      time: `${normalizedHour}:${normalizedMinute} ${period}`,
       title: eventTitle,
       description: eventDescription,
       adminAdded: true
