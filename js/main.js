@@ -112,12 +112,17 @@ function syncAdminControls() {
   const loggedIn = isAdminLoggedIn();
   document.querySelectorAll("[data-admin-only]").forEach(control => {
     control.hidden = !loggedIn;
+    control.style.display = loggedIn ? "" : "none";
   });
 
   if (adminButton) adminButton.textContent = loggedIn ? "Sign Out" : "Login";
   if (adminStatus) adminStatus.hidden = !loggedIn;
+  if (!loggedIn) {
+    document.querySelectorAll("[data-video-edit-panel]").forEach(panel => panel.hidden = true);
+  }
   renderScheduleLists();
   renderFAQList();
+  updateVideoHighlightsUI();
 }
 
 function signOutAdmin() {
@@ -179,11 +184,16 @@ const addQAMenu = document.querySelector("[data-add-qa-menu]");
 const qaQuestionInput = document.querySelector("textarea[name='qaQuestion']");
 const qaAnswerInput = document.querySelector("textarea[name='qaAnswer']");
 const qaSaveKey = "adminFAQData";
+const videoHighlightsKey = "adminVideoHighlights";
+let videoHighlights = { featured: "", practice: "" };
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
 loadSavedAdminEvents();
 loadSavedFAQ();
+loadSavedVideoHighlights();
+initializeVideoEditors();
+updateVideoHighlightsUI();
 syncAdminControls();
 
 if (calendarRoot) {
@@ -431,6 +441,107 @@ function saveAdminFAQ() {
   if (!faqListRoot) return;
   const adminFaqs = faqData.filter(item => item.adminAdded);
   localStorage.setItem(qaSaveKey, JSON.stringify(adminFaqs));
+}
+
+function loadSavedVideoHighlights() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(videoHighlightsKey) || "{}");
+    if (saved && typeof saved === "object") {
+      videoHighlights.featured = String(saved.featured || "");
+      videoHighlights.practice = String(saved.practice || "");
+    }
+  } catch {
+    localStorage.removeItem(videoHighlightsKey);
+  }
+}
+
+function saveVideoHighlights() {
+  localStorage.setItem(videoHighlightsKey, JSON.stringify(videoHighlights));
+}
+
+function updateVideoHighlightsUI() {
+  document.querySelectorAll("[data-video-card]").forEach(card => {
+    const type = card.dataset.videoCard;
+    const iframe = card.querySelector("iframe");
+    const description = card.querySelector(".video-description");
+    const savedUrl = videoHighlights[type];
+    if (iframe && savedUrl) {
+      iframe.src = savedUrl;
+      if (description) description.textContent = "Updated video embed.";
+    }
+  });
+}
+
+function initializeVideoEditors() {
+  document.querySelectorAll("[data-video-card]").forEach(card => {
+    const toggle = card.querySelector("[data-video-edit-toggle]");
+    const panel = card.querySelector("[data-video-edit-panel]");
+    const input = card.querySelector(".video-url-input");
+    const saveButton = card.querySelector("[data-video-save]");
+    const cancelButton = card.querySelector("[data-video-cancel]");
+    if (!toggle || !panel || !input || !saveButton || !cancelButton) return;
+
+    toggle.addEventListener("click", () => {
+      if (!isAdminLoggedIn()) return;
+      panel.hidden = false;
+      input.value = videoHighlights[card.dataset.videoCard] || "";
+      input.focus();
+    });
+
+    saveButton.addEventListener("click", () => {
+      if (!isAdminLoggedIn()) return;
+      const rawUrl = String(input.value || "").trim();
+      const embedUrl = getVideoEmbedUrl(rawUrl);
+      if (!embedUrl) {
+        showToast("Enter a valid YouTube or Vimeo video URL.");
+        return;
+      }
+      videoHighlights[card.dataset.videoCard] = embedUrl;
+      saveVideoHighlights();
+      updateVideoHighlightsUI();
+      panel.hidden = true;
+      showToast("Video embed updated.");
+    });
+
+    cancelButton.addEventListener("click", () => {
+      panel.hidden = true;
+    });
+  });
+}
+
+function getVideoEmbedUrl(url) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./, "").toLowerCase();
+    if (hostname === "youtube.com" || hostname === "m.youtube.com") {
+      if (parsed.pathname === "/watch") {
+        const id = parsed.searchParams.get("v");
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+      if (parsed.pathname.startsWith("/embed/")) {
+        return `https://www.youtube.com${parsed.pathname}${parsed.search}`;
+      }
+      if (parsed.pathname.startsWith("/shorts/")) {
+        const id = parsed.pathname.split("/")[2];
+        return id ? `https://www.youtube.com/embed/${id}` : "";
+      }
+    }
+    if (hostname === "youtu.be") {
+      const id = parsed.pathname.slice(1);
+      return id ? `https://www.youtube.com/embed/${id}` : "";
+    }
+    if (hostname === "vimeo.com") {
+      const id = parsed.pathname.slice(1).split("/")[0];
+      return id ? `https://player.vimeo.com/video/${id}` : "";
+    }
+    if (hostname === "player.vimeo.com") {
+      return url;
+    }
+  } catch {
+    return "";
+  }
+  return "";
 }
 
 function setupAddGameMenu() {
