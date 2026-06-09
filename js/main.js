@@ -11,6 +11,8 @@ let signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
 const savedEventsKey = "adminEventScheduleData";
 const savedAnnouncementsKey = "adminAnnouncementsData";
+const savedMembersKey = "adminImportantMembersData";
+const hiddenMembersKey = "adminHiddenImportantMembers";
 
 const faqData = [];
 
@@ -124,6 +126,7 @@ function syncAdminControls() {
   renderScheduleLists();
   renderFAQList();
   renderAnnouncements();
+  renderImportantMembers();
   updateVideoHighlightsUI();
 }
 
@@ -132,6 +135,7 @@ function signOutAdmin() {
   syncAdminControls();
   closeAddGameMenu();
   closeAddAnnouncementMenu();
+  closeAddMemberMenu();
   showToast("Admin mode signed out.");
 }
 
@@ -184,10 +188,18 @@ const addAnnouncementToggle = document.querySelector("[data-add-announcement-tog
 const addAnnouncementMenu = document.querySelector("[data-add-announcement-menu]");
 const announcementTitleInput = document.querySelector("input[name='announcementTitle']");
 const announcementDetailsInput = document.querySelector("textarea[name='announcementDetails']");
+const memberListRoot = document.querySelector("[data-member-list]");
+const addMemberToggle = document.querySelector("[data-add-member-toggle]");
+const addMemberMenu = document.querySelector("[data-add-member-menu]");
+const memberNameInput = document.querySelector("input[name='memberName']");
+const memberDescriptionInput = document.querySelector("textarea[name='memberDescription']");
+const memberImageInput = document.querySelector("input[name='memberImage']");
 const oneDayMs = 1000 * 60 * 60 * 24;
 const oneWeekMs = oneDayMs * 7;
 let videoHighlights = { featured: "", practice: "" };
 let announcementData = [];
+let importantMemberData = [];
+let hiddenStaticMemberIds = [];
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
@@ -195,10 +207,13 @@ loadSavedAdminEvents();
 loadSavedFAQ();
 loadSavedVideoHighlights();
 loadSavedAnnouncements();
+loadSavedImportantMembers();
 initializeVideoEditors();
 updateVideoHighlightsUI();
 setupAddAnnouncementMenu();
+setupAddMemberMenu();
 renderAnnouncements();
+renderImportantMembers();
 updateAnnouncementBadge();
 startAnnouncementLifecycleTimer();
 syncAdminControls();
@@ -220,6 +235,7 @@ setupAddQAMenu();
 renderScheduleLists();
 renderFAQList();
 renderAnnouncements();
+renderImportantMembers();
 
 function getStartingMonthIndex() {
   const now = new Date();
@@ -562,6 +578,189 @@ function startAnnouncementLifecycleTimer() {
     renderAnnouncements();
     updateAnnouncementBadge();
   }, 1000 * 60);
+}
+
+function setupAddMemberMenu() {
+  if (!addMemberToggle || !addMemberMenu) return;
+
+  addMemberToggle.addEventListener("click", () => {
+    if (addMemberMenu.hidden) {
+      openAddMemberMenu();
+    } else {
+      closeAddMemberMenu();
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (addMemberMenu.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && !addMemberMenu.contains(target) && !addMemberToggle.contains(target)) {
+      closeAddMemberMenu();
+    }
+  });
+
+  addMemberMenu.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!isAdminLoggedIn()) return;
+
+    const name = String(memberNameInput?.value || "").trim();
+    const description = String(memberDescriptionInput?.value || "").trim();
+    const imageFile = memberImageInput?.files?.[0];
+
+    if (!name || !description || !imageFile) {
+      showToast("Enter a member name, description, and image.");
+      return;
+    }
+
+    if (!imageFile.type.startsWith("image/")) {
+      showToast("Choose an image file for the member.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const newMember = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        name,
+        description,
+        imageSrc: String(reader.result || "")
+      };
+      importantMemberData.push(newMember);
+      if (!saveImportantMembers()) {
+        importantMemberData = importantMemberData.filter(member => member.id !== newMember.id);
+        showToast("That image is too large to save in this browser.");
+        return;
+      }
+      renderImportantMembers();
+      addMemberMenu.reset();
+      closeAddMemberMenu();
+      showToast("Important member added.");
+    });
+    reader.addEventListener("error", () => showToast("Could not read that image file."));
+    reader.readAsDataURL(imageFile);
+  });
+}
+
+function openAddMemberMenu() {
+  if (!addMemberMenu || !addMemberToggle) return;
+  addMemberMenu.hidden = false;
+  addMemberToggle.setAttribute("aria-expanded", "true");
+  memberNameInput?.focus();
+}
+
+function closeAddMemberMenu() {
+  if (!addMemberMenu || !addMemberToggle) return;
+  addMemberMenu.hidden = true;
+  addMemberToggle.setAttribute("aria-expanded", "false");
+}
+
+function renderImportantMembers() {
+  if (!memberListRoot) return;
+
+  memberListRoot.querySelectorAll("[data-static-member]").forEach(card => {
+    const isHidden = hiddenStaticMemberIds.includes(card.dataset.staticMember);
+    card.hidden = isHidden;
+    card.style.display = isHidden ? "none" : "";
+    card.querySelector("[data-member-delete]")?.remove();
+    if (!isHidden && isAdminLoggedIn()) {
+      card.appendChild(createMemberDeleteButton(() => {
+        hiddenStaticMemberIds.push(card.dataset.staticMember);
+        saveHiddenStaticMembers();
+        renderImportantMembers();
+        showToast("Important member deleted.");
+      }));
+    }
+  });
+
+  memberListRoot.querySelectorAll("[data-admin-member]").forEach(card => card.remove());
+  importantMemberData.forEach(member => {
+    memberListRoot.appendChild(createImportantMemberCard(member));
+  });
+}
+
+function createImportantMemberCard(member) {
+  const card = document.createElement("article");
+  card.className = "card member-card";
+  card.dataset.adminMember = member.id;
+
+  const image = document.createElement("img");
+  image.src = member.imageSrc;
+  image.alt = `Portrait for ${member.name}`;
+  image.loading = "lazy";
+
+  const name = document.createElement("h3");
+  name.textContent = member.name;
+
+  const description = document.createElement("p");
+  description.textContent = member.description;
+
+  card.append(image, name, description);
+
+  if (isAdminLoggedIn()) {
+    card.appendChild(createMemberDeleteButton(() => {
+      importantMemberData = importantMemberData.filter(existing => existing.id !== member.id);
+      saveImportantMembers();
+      renderImportantMembers();
+      showToast("Important member deleted.");
+    }));
+  }
+
+  return card;
+}
+
+function createMemberDeleteButton(onDelete) {
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "btn btn-secondary member-delete-button";
+  deleteButton.type = "button";
+  deleteButton.dataset.adminOnly = "";
+  deleteButton.dataset.memberDelete = "";
+  deleteButton.setAttribute("aria-label", "Delete important member");
+  deleteButton.textContent = "X";
+  deleteButton.addEventListener("click", onDelete);
+  return deleteButton;
+}
+
+function loadSavedImportantMembers() {
+  if (!memberListRoot) return;
+  try {
+    const savedMembers = JSON.parse(localStorage.getItem(savedMembersKey) || "[]");
+    if (Array.isArray(savedMembers)) {
+      importantMemberData = savedMembers
+        .filter(member => member && typeof member === "object")
+        .map(member => ({
+          id: String(member.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+          name: String(member.name || "").trim(),
+          description: String(member.description || "").trim(),
+          imageSrc: String(member.imageSrc || "")
+        }))
+        .filter(member => member.name && member.description && member.imageSrc);
+    }
+  } catch {
+    localStorage.removeItem(savedMembersKey);
+  }
+
+  try {
+    const hiddenIds = JSON.parse(localStorage.getItem(hiddenMembersKey) || "[]");
+    if (Array.isArray(hiddenIds)) hiddenStaticMemberIds = hiddenIds.map(id => String(id));
+  } catch {
+    localStorage.removeItem(hiddenMembersKey);
+  }
+}
+
+function saveImportantMembers() {
+  if (!memberListRoot) return false;
+  try {
+    localStorage.setItem(savedMembersKey, JSON.stringify(importantMemberData));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function saveHiddenStaticMembers() {
+  if (!memberListRoot) return;
+  hiddenStaticMemberIds = [...new Set(hiddenStaticMemberIds)];
+  localStorage.setItem(hiddenMembersKey, JSON.stringify(hiddenStaticMemberIds));
 }
 
 function setupAddQAMenu() {

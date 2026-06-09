@@ -310,6 +310,28 @@ h3 { font-size: 1.55rem; }
   width: min(24rem, calc(100vw - 2rem));
 }
 
+.member-form {
+  width: min(24rem, calc(100vw - 2rem));
+}
+
+.member-card {
+  position: relative;
+}
+
+.member-delete-button {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  background: rgba(13, 3, 27, 0.82);
+}
+
 .faq details {
   padding: var(--space-3);
   border: 1px solid var(--color-border);
