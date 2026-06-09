@@ -136,6 +136,7 @@ function signOutAdmin() {
   closeAddGameMenu();
   closeAddAnnouncementMenu();
   closeAddMemberMenu();
+  closeClipWeekMenu();
   showToast("Admin mode signed out.");
 }
 
@@ -183,6 +184,7 @@ const qaQuestionInput = document.querySelector("textarea[name='qaQuestion']");
 const qaAnswerInput = document.querySelector("textarea[name='qaAnswer']");
 const qaSaveKey = "adminFAQData";
 const videoHighlightsKey = "adminVideoHighlights";
+const clipWeeksKey = "adminClipWeeks";
 const announcementLists = document.querySelectorAll("[data-announcement-list]");
 const addAnnouncementToggle = document.querySelector("[data-add-announcement-toggle]");
 const addAnnouncementMenu = document.querySelector("[data-add-announcement-menu]");
@@ -194,9 +196,15 @@ const addMemberMenu = document.querySelector("[data-add-member-menu]");
 const memberNameInput = document.querySelector("input[name='memberName']");
 const memberDescriptionInput = document.querySelector("textarea[name='memberDescription']");
 const memberImageInput = document.querySelector("input[name='memberImage']");
+const clipWeekListRoot = document.querySelector("[data-clip-week-list]");
+const addClipWeekToggle = document.querySelector("[data-add-clip-week-toggle]");
+const addClipWeekMenu = document.querySelector("[data-add-clip-week-menu]");
+const clipWeekTitleInput = document.querySelector("input[name='clipWeekTitle']");
 const oneDayMs = 1000 * 60 * 60 * 24;
 const oneWeekMs = oneDayMs * 7;
 let videoHighlights = { featured: "", practice: "" };
+let clipWeekData = [];
+let openClipWeekIds = new Set();
 let announcementData = [];
 let importantMemberData = [];
 let hiddenStaticMemberIds = [];
@@ -206,14 +214,17 @@ let gameMonthIndex = currentMonthIndex;
 loadSavedAdminEvents();
 loadSavedFAQ();
 loadSavedVideoHighlights();
+loadSavedClipWeeks();
 loadSavedAnnouncements();
 loadSavedImportantMembers();
 initializeVideoEditors();
+setupClipWeekControls();
 updateVideoHighlightsUI();
 setupAddAnnouncementMenu();
 setupAddMemberMenu();
 renderAnnouncements();
 renderImportantMembers();
+renderClipWeeks();
 updateAnnouncementBadge();
 startAnnouncementLifecycleTimer();
 syncAdminControls();
@@ -236,6 +247,7 @@ renderScheduleLists();
 renderFAQList();
 renderAnnouncements();
 renderImportantMembers();
+renderClipWeeks();
 
 function getStartingMonthIndex() {
   const now = new Date();
@@ -887,6 +899,285 @@ function initializeVideoEditors() {
       panel.hidden = true;
     });
   });
+}
+
+function setupClipWeekControls() {
+  if (!clipWeekListRoot || !addClipWeekToggle || !addClipWeekMenu) return;
+
+  addClipWeekToggle.addEventListener("click", () => {
+    if (addClipWeekMenu.hidden) {
+      addClipWeekMenu.hidden = false;
+      addClipWeekToggle.setAttribute("aria-expanded", "true");
+      clipWeekTitleInput?.focus();
+    } else {
+      closeClipWeekMenu();
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (addClipWeekMenu.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && !addClipWeekMenu.contains(target) && !addClipWeekToggle.contains(target)) {
+      closeClipWeekMenu();
+    }
+  });
+
+  addClipWeekMenu.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!isAdminLoggedIn()) return;
+    const title = String(clipWeekTitleInput?.value || "").trim();
+    if (!title) {
+      showToast("Enter a title for this clips dropdown.");
+      return;
+    }
+
+    const newWeek = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      title,
+      clips: []
+    };
+    clipWeekData.unshift(newWeek);
+    openClipWeekIds.add(newWeek.id);
+    saveClipWeeks();
+    renderClipWeeks();
+    addClipWeekMenu.reset();
+    closeClipWeekMenu();
+    showToast("Highlight dropdown added.");
+  });
+}
+
+function closeClipWeekMenu() {
+  if (!addClipWeekMenu || !addClipWeekToggle) return;
+  addClipWeekMenu.hidden = true;
+  addClipWeekToggle.setAttribute("aria-expanded", "false");
+}
+
+function renderClipWeeks() {
+  if (!clipWeekListRoot) return;
+  captureOpenClipWeeks();
+  clipWeekListRoot.innerHTML = "";
+
+  if (clipWeekData.length === 0) {
+    if (!isAdminLoggedIn()) return;
+    const emptyCard = document.createElement("article");
+    emptyCard.className = "card";
+    emptyCard.innerHTML = "<h3>No weekly clip dropdowns yet</h3><p>Clip groups added in admin mode will appear here.</p>";
+    clipWeekListRoot.appendChild(emptyCard);
+    return;
+  }
+
+  clipWeekData.forEach(week => {
+    clipWeekListRoot.appendChild(createClipWeekDropdown(week));
+  });
+}
+
+function createClipWeekDropdown(week) {
+  const details = document.createElement("details");
+  details.className = "clip-week-dropdown";
+  details.dataset.clipWeekId = week.id;
+  details.open = openClipWeekIds.has(week.id);
+  details.addEventListener("toggle", () => {
+    if (details.open) {
+      openClipWeekIds.add(week.id);
+    } else {
+      openClipWeekIds.delete(week.id);
+    }
+  });
+
+  const summary = document.createElement("summary");
+  const title = document.createElement("span");
+  title.textContent = week.title;
+  summary.appendChild(title);
+
+  if (isAdminLoggedIn()) {
+    const actions = document.createElement("span");
+    actions.className = "clip-week-actions";
+    const addClipButton = createSmallActionButton("Add clip", "+");
+    const deleteWeekButton = createSmallActionButton("Delete dropdown", "X");
+
+    addClipButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      addClipToWeek(week);
+    });
+
+    deleteWeekButton.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      clipWeekData = clipWeekData.filter(existing => existing.id !== week.id);
+      openClipWeekIds.delete(week.id);
+      saveClipWeeks();
+      renderClipWeeks();
+      showToast("Highlight dropdown deleted.");
+    });
+
+    actions.append(addClipButton, deleteWeekButton);
+    summary.appendChild(actions);
+  }
+
+  details.appendChild(summary);
+
+  const clipGrid = document.createElement("div");
+  clipGrid.className = "weekly-clip-grid";
+  if (!Array.isArray(week.clips) || week.clips.length === 0) {
+    const emptyText = document.createElement("p");
+    emptyText.className = "clip-week-empty";
+    emptyText.textContent = "No clips have been added to this dropdown yet.";
+    clipGrid.appendChild(emptyText);
+  } else {
+    week.clips.forEach(clip => clipGrid.appendChild(createWeeklyClipCard(week, clip)));
+  }
+
+  details.appendChild(clipGrid);
+  return details;
+}
+
+function addClipToWeek(week) {
+  if (!Array.isArray(week.clips)) week.clips = [];
+  if (week.clips.length >= 6) {
+    showToast("Each dropdown can hold at most six clips.");
+    return;
+  }
+
+  week.clips.push({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    caption: ""
+  });
+  openClipWeekIds.add(week.id);
+  saveClipWeeks();
+  renderClipWeeks();
+  showToast("Clip added.");
+}
+
+function createWeeklyClipCard(week, clip) {
+  const card = document.createElement("article");
+  card.className = "card video-card weekly-clip-card";
+
+  const header = document.createElement("div");
+  header.className = "video-card-header";
+  const title = document.createElement("h3");
+  title.textContent = "Clip";
+  header.appendChild(title);
+
+  if (isAdminLoggedIn()) {
+    const actions = document.createElement("div");
+    actions.className = "weekly-clip-actions";
+    const editButton = createSmallActionButton("Edit clip link and caption", "+");
+    const deleteButton = createSmallActionButton("Delete clip", "X");
+    editButton.addEventListener("click", () => toggleWeeklyClipPanel(card, clip));
+    deleteButton.addEventListener("click", () => {
+      week.clips = week.clips.filter(existing => existing.id !== clip.id);
+      openClipWeekIds.add(week.id);
+      saveClipWeeks();
+      renderClipWeeks();
+      showToast("Clip deleted.");
+    });
+    actions.append(editButton, deleteButton);
+    header.appendChild(actions);
+  }
+
+  const iframe = document.createElement("iframe");
+  iframe.loading = "lazy";
+  iframe.src = clip.embedUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ";
+  iframe.title = clip.caption || "Rocket League highlight clip";
+  iframe.allowFullscreen = true;
+
+  const caption = document.createElement("p");
+  caption.className = "video-description";
+  caption.textContent = clip.caption || "Caption pending.";
+
+  const editPanel = document.createElement("div");
+  editPanel.className = "video-edit-panel";
+  editPanel.dataset.weeklyClipPanel = "";
+  editPanel.hidden = true;
+  editPanel.innerHTML = `<label><span>YouTube URL</span><input class="video-url-input" type="url" placeholder="https://youtu.be/..." aria-label="Enter clip URL"></label><label><span>Caption</span><textarea class="clip-caption-input" rows="3" placeholder="Short clip caption" aria-label="Enter clip caption"></textarea></label><div class="video-edit-actions"><button class="btn btn-primary" type="button" data-weekly-clip-save>Save</button><button class="btn btn-secondary" type="button" data-weekly-clip-cancel>Cancel</button></div>`;
+
+  editPanel.querySelector("[data-weekly-clip-save]")?.addEventListener("click", () => {
+    const input = editPanel.querySelector(".video-url-input");
+    const captionInput = editPanel.querySelector(".clip-caption-input");
+    const embedUrl = getVideoEmbedUrl(String(input?.value || "").trim());
+    if (!embedUrl) {
+      showToast("Enter a valid YouTube or Vimeo video URL.");
+      return;
+    }
+    clip.embedUrl = embedUrl;
+    clip.caption = String(captionInput?.value || "").trim();
+    openClipWeekIds.add(week.id);
+    saveClipWeeks();
+    renderClipWeeks();
+    showToast("Clip updated.");
+  });
+
+  editPanel.querySelector("[data-weekly-clip-cancel]")?.addEventListener("click", () => {
+    editPanel.hidden = true;
+  });
+
+  card.append(header, iframe, caption, editPanel);
+  return card;
+}
+
+function captureOpenClipWeeks() {
+  if (!clipWeekListRoot) return;
+  clipWeekListRoot.querySelectorAll(".clip-week-dropdown").forEach(details => {
+    const weekId = details.dataset.clipWeekId;
+    if (!weekId) return;
+    if (details.open) {
+      openClipWeekIds.add(weekId);
+    } else {
+      openClipWeekIds.delete(weekId);
+    }
+  });
+}
+
+function toggleWeeklyClipPanel(card, clip) {
+  if (!isAdminLoggedIn()) return;
+  const panel = card.querySelector("[data-weekly-clip-panel]");
+  const input = panel?.querySelector(".video-url-input");
+  const captionInput = panel?.querySelector(".clip-caption-input");
+  if (!panel || !input || !captionInput) return;
+  panel.hidden = !panel.hidden;
+  input.value = clip.embedUrl || "";
+  captionInput.value = clip.caption || "";
+  if (!panel.hidden) input.focus();
+}
+
+function createSmallActionButton(label, text) {
+  const button = document.createElement("button");
+  button.className = "icon-button small-icon-button";
+  button.type = "button";
+  button.dataset.adminOnly = "";
+  button.setAttribute("aria-label", label);
+  button.textContent = text;
+  return button;
+}
+
+function loadSavedClipWeeks() {
+  if (!clipWeekListRoot) return;
+  try {
+    const saved = JSON.parse(localStorage.getItem(clipWeeksKey) || "[]");
+    if (Array.isArray(saved)) {
+      clipWeekData = saved
+        .filter(week => week && typeof week === "object")
+        .map(week => ({
+          id: String(week.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+          title: String(week.title || "").trim(),
+          clips: Array.isArray(week.clips) ? week.clips.slice(0, 6).map(clip => ({
+            id: String(clip.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`),
+            embedUrl: String(clip.embedUrl || ""),
+            caption: String(clip.caption || "")
+          })).filter(clip => clip.embedUrl) : []
+        }))
+        .filter(week => week.title);
+    }
+  } catch {
+    localStorage.removeItem(clipWeeksKey);
+  }
+}
+
+function saveClipWeeks() {
+  if (!clipWeekListRoot) return;
+  localStorage.setItem(clipWeeksKey, JSON.stringify(clipWeekData));
 }
 
 function getVideoEmbedUrl(url) {
