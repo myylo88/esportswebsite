@@ -271,6 +271,45 @@ h3 { font-size: 1.55rem; }
 
 .announcement { border-left: 4px solid var(--color-gold); }
 
+.announcements-section h2:not(:first-child) {
+  margin-top: var(--space-5);
+}
+
+.announcement-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.announcement-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--space-3);
+}
+
+.announcement-card h3 {
+  margin-bottom: var(--space-2);
+}
+
+.announcement-card p {
+  margin: 0;
+}
+
+.announcement-delete-button {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+
+.announcement-form {
+  width: min(24rem, calc(100vw - 2rem));
+}
+
 .faq details {
   padding: var(--space-3);
   border: 1px solid var(--color-border);

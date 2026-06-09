@@ -10,6 +10,7 @@ let adminStatus = document.querySelector("#adminStatus");
 let signOutButton = document.querySelector("#signOutButton");
 const demoPassword = "captain2026";
 const savedEventsKey = "adminEventScheduleData";
+const savedAnnouncementsKey = "adminAnnouncementsData";
 
 const faqData = [];
 
@@ -122,6 +123,7 @@ function syncAdminControls() {
   }
   renderScheduleLists();
   renderFAQList();
+  renderAnnouncements();
   updateVideoHighlightsUI();
 }
 
@@ -129,20 +131,12 @@ function signOutAdmin() {
   localStorage.removeItem("isCaptain");
   syncAdminControls();
   closeAddGameMenu();
+  closeAddAnnouncementMenu();
   showToast("Admin mode signed out.");
 }
 
 if (signOutButton) {
   signOutButton.addEventListener("click", signOutAdmin);
-}
-
-const latestAnnouncementIso = "2026-06-04T09:00:00";
-const badge = document.querySelector("[data-announcement-badge]");
-if (badge) {
-  const latestDate = new Date(latestAnnouncementIso);
-  const now = new Date();
-  const hoursSinceLatest = (now - latestDate) / (1000 * 60 * 60);
-  if (hoursSinceLatest >= 0 && hoursSinceLatest <= 24) badge.classList.add("is-visible");
 }
 
 const schoolYearMonths = [
@@ -185,15 +179,28 @@ const qaQuestionInput = document.querySelector("textarea[name='qaQuestion']");
 const qaAnswerInput = document.querySelector("textarea[name='qaAnswer']");
 const qaSaveKey = "adminFAQData";
 const videoHighlightsKey = "adminVideoHighlights";
+const announcementLists = document.querySelectorAll("[data-announcement-list]");
+const addAnnouncementToggle = document.querySelector("[data-add-announcement-toggle]");
+const addAnnouncementMenu = document.querySelector("[data-add-announcement-menu]");
+const announcementTitleInput = document.querySelector("input[name='announcementTitle']");
+const announcementDetailsInput = document.querySelector("textarea[name='announcementDetails']");
+const oneDayMs = 1000 * 60 * 60 * 24;
+const oneWeekMs = oneDayMs * 7;
 let videoHighlights = { featured: "", practice: "" };
+let announcementData = [];
 let currentMonthIndex = getStartingMonthIndex();
 let gameMonthIndex = currentMonthIndex;
 
 loadSavedAdminEvents();
 loadSavedFAQ();
 loadSavedVideoHighlights();
+loadSavedAnnouncements();
 initializeVideoEditors();
 updateVideoHighlightsUI();
+setupAddAnnouncementMenu();
+renderAnnouncements();
+updateAnnouncementBadge();
+startAnnouncementLifecycleTimer();
 syncAdminControls();
 
 if (calendarRoot) {
@@ -212,6 +219,7 @@ setupAddGameMenu();
 setupAddQAMenu();
 renderScheduleLists();
 renderFAQList();
+renderAnnouncements();
 
 function getStartingMonthIndex() {
   const now = new Date();
@@ -381,6 +389,179 @@ function renderFAQList() {
 
     faqListRoot.appendChild(detail);
   });
+}
+
+function setupAddAnnouncementMenu() {
+  if (!addAnnouncementToggle || !addAnnouncementMenu) return;
+
+  addAnnouncementToggle.addEventListener("click", () => {
+    if (addAnnouncementMenu.hidden) {
+      openAddAnnouncementMenu();
+    } else {
+      closeAddAnnouncementMenu();
+    }
+  });
+
+  document.addEventListener("click", event => {
+    if (addAnnouncementMenu.hidden) return;
+    const target = event.target;
+    if (target instanceof Node && !addAnnouncementMenu.contains(target) && !addAnnouncementToggle.contains(target)) {
+      closeAddAnnouncementMenu();
+    }
+  });
+
+  addAnnouncementMenu.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!isAdminLoggedIn()) return;
+
+    const title = String(announcementTitleInput?.value || "").trim();
+    const details = String(announcementDetailsInput?.value || "").trim();
+
+    if (!title || !details) {
+      showToast("Enter an announcement title and details.");
+      return;
+    }
+
+    announcementData.unshift({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      title,
+      details,
+      createdAt: new Date().toISOString()
+    });
+
+    saveAnnouncements();
+    renderAnnouncements();
+    updateAnnouncementBadge();
+    addAnnouncementMenu.reset();
+    closeAddAnnouncementMenu();
+    showToast("Announcement added.");
+  });
+}
+
+function openAddAnnouncementMenu() {
+  if (!addAnnouncementMenu || !addAnnouncementToggle) return;
+  addAnnouncementMenu.hidden = false;
+  addAnnouncementToggle.setAttribute("aria-expanded", "true");
+  announcementTitleInput?.focus();
+}
+
+function closeAddAnnouncementMenu() {
+  if (!addAnnouncementMenu || !addAnnouncementToggle) return;
+  addAnnouncementMenu.hidden = true;
+  addAnnouncementToggle.setAttribute("aria-expanded", "false");
+}
+
+function renderAnnouncements() {
+  if (announcementLists.length === 0) return;
+  pruneAnnouncements();
+
+  announcementLists.forEach(list => {
+    const status = list.dataset.announcementList;
+    const announcements = announcementData
+      .filter(item => getAnnouncementStatus(item) === status)
+      .sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt));
+
+    list.innerHTML = "";
+    if (announcements.length === 0) {
+      const emptyCard = document.createElement("article");
+      emptyCard.className = "card announcement";
+      emptyCard.innerHTML = `<h3>No ${status} announcements right now</h3><p>Announcements will appear here automatically.</p>`;
+      list.appendChild(emptyCard);
+      return;
+    }
+
+    announcements.forEach(item => list.appendChild(createAnnouncementCard(item, status)));
+  });
+}
+
+function createAnnouncementCard(item, status) {
+  const card = document.createElement("article");
+  card.className = "card announcement announcement-card";
+
+  const content = document.createElement("div");
+  const title = document.createElement("h3");
+  const details = document.createElement("p");
+  title.textContent = item.title;
+  details.textContent = item.details;
+  content.append(title, details);
+  card.appendChild(content);
+
+  if (status === "recent" && isAdminLoggedIn()) {
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "btn btn-secondary announcement-delete-button";
+    deleteButton.type = "button";
+    deleteButton.dataset.adminOnly = "";
+    deleteButton.setAttribute("aria-label", "Delete recent announcement");
+    deleteButton.textContent = "X";
+    deleteButton.addEventListener("click", () => {
+      announcementData = announcementData.filter(existing => existing.id !== item.id);
+      saveAnnouncements();
+      renderAnnouncements();
+      updateAnnouncementBadge();
+      showToast("Announcement deleted.");
+    });
+    card.appendChild(deleteButton);
+  }
+
+  return card;
+}
+
+function loadSavedAnnouncements() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(savedAnnouncementsKey) || "[]");
+    if (Array.isArray(saved)) {
+      announcementData = saved
+        .filter(item => item && typeof item === "object")
+        .map(item => ({
+          id: String(item.id || `${Date.parse(item.createdAt) || Date.now()}-${Math.random().toString(36).slice(2)}`),
+          title: String(item.title || "").trim(),
+          details: String(item.details || "").trim(),
+          createdAt: String(item.createdAt || "")
+        }))
+        .filter(item => item.title && item.details && !Number.isNaN(Date.parse(item.createdAt)));
+    }
+  } catch {
+    localStorage.removeItem(savedAnnouncementsKey);
+  }
+  pruneAnnouncements();
+}
+
+function saveAnnouncements() {
+  pruneAnnouncements(false);
+  localStorage.setItem(savedAnnouncementsKey, JSON.stringify(announcementData));
+}
+
+function pruneAnnouncements(shouldSave = true) {
+  const beforeLength = announcementData.length;
+  const now = Date.now();
+  announcementData = announcementData.filter(item => {
+    const createdTime = Date.parse(item.createdAt);
+    return !Number.isNaN(createdTime) && now - createdTime < oneWeekMs;
+  });
+  if (shouldSave && beforeLength !== announcementData.length) {
+    localStorage.setItem(savedAnnouncementsKey, JSON.stringify(announcementData));
+  }
+}
+
+function getAnnouncementStatus(item) {
+  const age = Date.now() - Date.parse(item.createdAt);
+  return age < oneDayMs ? "recent" : "past";
+}
+
+function updateAnnouncementBadge() {
+  const badge = document.querySelector("[data-announcement-badge]");
+  if (!badge) return;
+  pruneAnnouncements();
+  const hasRecentAnnouncement = announcementData.some(item => getAnnouncementStatus(item) === "recent");
+  badge.classList.toggle("is-visible", hasRecentAnnouncement);
+}
+
+function startAnnouncementLifecycleTimer() {
+  if (announcementLists.length === 0 && !document.querySelector("[data-announcement-badge]")) return;
+  setInterval(() => {
+    renderAnnouncements();
+    updateAnnouncementBadge();
+  }, 1000 * 60);
 }
 
 function setupAddQAMenu() {
