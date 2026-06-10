@@ -733,6 +733,95 @@ summary { cursor: pointer; font-family: var(--font-heading); color: var(--color-
   background: #000;
 }
 
+.weekly-clips-section {
+  padding-top: var(--space-3);
+}
+
+.clip-week-list {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.clip-week-dropdown {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(23, 16, 42, 0.88);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.clip-week-dropdown summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-white);
+  list-style: none;
+}
+
+.clip-week-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.clip-week-dropdown summary > span:first-of-type {
+  flex: 1;
+}
+
+.clip-week-dropdown summary::before {
+  content: ">";
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  color: var(--color-gold);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  transition: transform 180ms ease;
+}
+
+.clip-week-dropdown[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.clip-week-actions,
+.weekly-clip-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.small-icon-button {
+  width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  font-size: 1rem;
+}
+
+.weekly-clip-grid {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.weekly-clip-card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.weekly-clip-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.clip-week-empty {
+  margin: 0;
+  color: var(--color-muted);
+}
+
 .form-embed {
   width: 100%;
   min-height: 900px;
@@ -814,6 +903,7 @@ textarea {
   .card-grid, .feature-grid, .video-grid { grid-template-columns: repeat(2, 1fr); }
   .hero { grid-template-columns: 1.1fr 0.9fr; align-items: center; }
   .event-card { grid-template-columns: 1fr auto; }
+  .weekly-clip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1024px) {
