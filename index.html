@@ -101,49 +101,55 @@
 <script src="js/main.js"></script>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  // Pulling Supabase via ESM Delivery Network
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-  // Your Web App's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JOl7rKBE0XkpvI",
-    authDomain: "phs-esports-5fce8.firebaseapp.com",
-    projectId: "phs-esports-5fce8",
-    storageBucket: "phs-esports-5fce8.firebasestorage.app",
-    messagingSenderId: "628629574347",
-    appId: "1:628629574347:web:0f0b9ffbec602b0465c14e",
-    measurementId: "G-7YL5S8H4YV"
-  };
+  // Using your specific Supabase Project Endpoint
+  const SUPABASE_URL = 'https://zxttjrukwjaqqkforbng.supabase.co'
+  
+  // ⚠️ ACTION REQUIRED: Replace the string below with your actual API key
+  const SUPABASE_KEY = 'https://zxttjrukwjaqqkforbng.supabase.co/rest/v1/'
 
-  // Initialize Firebase and Firestore database
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-  // Set up real-time stream listener for the test-promo document
-  const announcementRef = doc(db, "announcements", "test-promo");
+  // Query function to pull down the newest created row in your table
+  async function fetchLatestAnnouncement() {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('title, content')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() // Prevents crash breaks if the table has 0 rows row records right now
 
-  onSnapshot(announcementRef, (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      
-      // Update the targeted HTML components dynamically
-      const titleElement = document.getElementById("announcement-title");
-      const contentElement = document.getElementById("announcement-content");
-
-      if (titleElement && data.title) {
-        titleElement.innerText = data.title;
-      }
-      if (contentElement && data.content) {
-        // Formats content field nicely. Bold tag logic built-in if you use a prefix format
-        contentElement.innerHTML = data.content;
-      }
-    } else {
-      console.log("Document 'test-promo' not found in Firestore.");
+    if (error) {
+      console.error('Error fetching data from Supabase:', error.message)
+      return
     }
-  }, (error) => {
-    console.error("Error reading Firestore data in real-time:", error);
-  });
+
+    if (data) {
+      const titleElement = document.getElementById("announcement-title")
+      const contentElement = document.getElementById("announcement-content")
+
+      if (titleElement && data.title) titleElement.innerText = data.title;
+      if (contentElement && data.content) contentElement.innerHTML = data.content;
+    }
+  }
+
+  // 1. Fire on initialization
+  fetchLatestAnnouncement()
+
+  // 2. Set up Postgres Broadcast real-time hook
+  supabase
+    .channel('schema-db-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'announcements' },
+      (payload) => {
+        console.log('Database modification event caught! Rerunning query renderer...')
+        fetchLatestAnnouncement()
+      }
+    )
+    .subscribe()
 </script>
 
 </body></html>
-
