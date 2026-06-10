@@ -73,8 +73,8 @@
 
 <section class="section">
   <article class="card announcement priority-announcement">
-    <h2>Recent Announcement</h2>
-    <p><strong>June Update:</strong> Varsity tryout information and casual meeting suggestions are now open.</p>
+    <h2 id="announcement-title">Recent Announcement</h2>
+    <p id="announcement-content">Loading the latest update from the database...</p>
     <a href="announcements.html">View all announcements</a>
   </article>
 </section>
@@ -96,4 +96,54 @@
   </article>
 </section>
 </main>
-<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer><script src="js/main.js"></script></body></html>
+<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer>
+
+<script src="js/main.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // Your Web App's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JOl7rKBE0XkpvI",
+    authDomain: "phs-esports-5fce8.firebaseapp.com",
+    projectId: "phs-esports-5fce8",
+    storageBucket: "phs-esports-5fce8.firebasestorage.app",
+    messagingSenderId: "628629574347",
+    appId: "1:628629574347:web:0f0b9ffbec602b0465c14e",
+    measurementId: "G-7YL5S8H4YV"
+  };
+
+  // Initialize Firebase and Firestore database
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Set up real-time stream listener for the test-promo document
+  const announcementRef = doc(db, "announcements", "test-promo");
+
+  onSnapshot(announcementRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      // Update the targeted HTML components dynamically
+      const titleElement = document.getElementById("announcement-title");
+      const contentElement = document.getElementById("announcement-content");
+
+      if (titleElement && data.title) {
+        titleElement.innerText = data.title;
+      }
+      if (contentElement && data.content) {
+        // Formats content field nicely. Bold tag logic built-in if you use a prefix format
+        contentElement.innerHTML = data.content;
+      }
+    } else {
+      console.log("Document 'test-promo' not found in Firestore.");
+    }
+  }, (error) => {
+    console.error("Error reading Firestore data in real-time:", error);
+  });
+</script>
+
+</body></html>
+
