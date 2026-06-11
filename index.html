@@ -100,56 +100,42 @@
 
 <script src="js/main.js"></script>
 
+<script type="module" src="js/admin.js"></script>
+
 <script type="module">
-  // Pulling Supabase via ESM Delivery Network
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-  // Using your specific Supabase Project Endpoint
-  const SUPABASE_URL = 'https://zxttjrukwjaqqkforbng.supabase.co'
-  
-  // ⚠️ ACTION REQUIRED: Replace the string below with your actual API key
-  const SUPABASE_KEY = 'https://zxttjrukwjaqqkforbng.supabase.co/rest/v1/'
+  // Using your exact CDN configuration values
+  const firebaseConfig = {
+    apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JO17rKBE0XkpvI",
+    authDomain: "phs-esports-5fce8.firebaseapp.com",
+    projectId: "phs-esports-5fce8",
+    storageBucket: "phs-esports-5fce8.firebasestorage.app",
+    messagingSenderId: "628629574347",
+    appId: "1:628629574347:web:0f0b9ffbec602b0465c14e",
+    measurementId: "G-7YL5S8H4YV"
+  };
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+  // Initialize Connection
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-  // Query function to pull down the newest created row in your table
-  async function fetchLatestAnnouncement() {
-    const { data, error } = await supabase
-      .from('announcements')
-      .select('title, content')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle() // Prevents crash breaks if the table has 0 rows row records right now
+  // Target the HTML paragraph element inside the "Recent Announcement" section
+  const contentElement = document.getElementById("announcement-content");
 
-    if (error) {
-      console.error('Error fetching data from Supabase:', error.message)
-      return
-    }
-
-    if (data) {
-      const titleElement = document.getElementById("announcement-title")
-      const contentElement = document.getElementById("announcement-content")
-
-      if (titleElement && data.title) titleElement.innerText = data.title;
-      if (contentElement && data.content) contentElement.innerHTML = data.content;
-    }
-  }
-
-  // 1. Fire on initialization
-  fetchLatestAnnouncement()
-
-  // 2. Set up Postgres Broadcast real-time hook
-  supabase
-    .channel('schema-db-changes')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'announcements' },
-      (payload) => {
-        console.log('Database modification event caught! Rerunning query renderer...')
-        fetchLatestAnnouncement()
+  if (contentElement) {
+    // Listens to Firestore in real-time. Changes update instantly on the screen!
+    onSnapshot(doc(db, "announcements", "schedule_info"), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().text) {
+        contentElement.innerText = docSnap.data().text;
+      } else {
+        contentElement.innerText = "No current announcements found.";
       }
-    )
-    .subscribe()
+    }, (error) => {
+      console.error("Error reading live database values:", error);
+    });
+  }
 </script>
 
 </body></html>
