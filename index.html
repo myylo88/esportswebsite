@@ -106,7 +106,6 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
   import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-  // Using your exact CDN configuration values
   const firebaseConfig = {
     apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JO17rKBE0XkpvI",
     authDomain: "phs-esports-5fce8.firebaseapp.com",
@@ -117,15 +116,12 @@
     measurementId: "G-7YL5S8H4YV"
   };
 
-  // Initialize Connection
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Target the HTML paragraph element inside the "Recent Announcement" section
   const contentElement = document.getElementById("announcement-content");
 
   if (contentElement) {
-    // Listens to Firestore in real-time. Changes update instantly on the screen!
     onSnapshot(doc(db, "announcements", "schedule_info"), (docSnap) => {
       if (docSnap.exists() && docSnap.data().text) {
         contentElement.innerText = docSnap.data().text;
@@ -138,4 +134,5 @@
   }
 </script>
 
-</body></html>
+<script src="js/main.js"></script>
+<script type="module" src="js/admin.js"></script>
