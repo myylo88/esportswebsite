@@ -121,10 +121,22 @@
 
   const contentElement = document.getElementById("announcement-content");
 
-  if (contentElement) {
+if (contentElement) {
+    // 1. Create a dynamic tracking attribute that blocks local storage overrides
+    const observer = new MutationObserver(() => {
+      const liveText = contentElement.getAttribute("data-live-text");
+      if (liveText && contentElement.innerText !== liveText) {
+        contentElement.innerText = liveText;
+      }
+    });
+    observer.observe(contentElement, { childList: true, characterData: true });
+
     onSnapshot(doc(db, "announcements", "schedule_info"), (docSnap) => {
       if (docSnap.exists() && docSnap.data().text) {
-        contentElement.innerText = docSnap.data().text;
+        const cloudMessage = docSnap.data().text;
+        // 2. Lock the cloud text into the element attributes
+        contentElement.setAttribute("data-live-text", cloudMessage);
+        contentElement.innerText = cloudMessage;
       } else {
         contentElement.innerText = "No current announcements found.";
       }
@@ -132,6 +144,7 @@
       console.error("Error reading live database values:", error);
     });
   }
+  
 </script>
 
 <script src="js/main.js"></script>
