@@ -1,0 +1,542 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css"><meta name="description" content="Predict the winner of a tournament bracket and configure the event as an admin."><meta property="og:title" content="Bracket Predictions | PHS Esports"><meta property="og:description" content="Predict the winner of an upcoming or current event and set up tournament brackets in admin mode."><meta property="og:type" content="website"><title>Bracket Predictions | PHS Esports</title></head><body class="">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <nav class="navbar" aria-label="Main navigation">
+    <a class="logo" href="index.html"><span class="logo-mark">E</span><span>Esports Team & Club</span></a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navLinks">Menu</button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html">Home</a>
+      <a href="about.html">About Us</a>
+      <a href="competitive.html">Competitive</a>
+      <a href="brackets.html">Brackets</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="casual.html">Casual</a>
+      <a class="announcement-link" href="announcements.html">Announcements <span class="new-announcement-badge" data-announcement-badge aria-label="New announcement">●</span></a>
+      <button class="admin-button" type="button">Login</button>
+    </div>
+  </nav>
+</header>
+<dialog id="adminDialog">
+  <h2>Captain Login</h2>
+  <p>This demo login shows a success message. For real private editing, use a backend or CMS.</p>
+  <form id="adminForm">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required>
+    <p class="form-message" aria-live="polite"></p>
+    <button class="btn btn-primary" type="submit">Log in</button>
+    <button class="btn btn-secondary" id="closeDialog" type="button">Cancel</button>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<main id="main">
+  <section class="hero bracket-hero">
+    <div>
+      <p class="eyebrow">Bracket Predictions</p>
+      <h1>Pick the winner</h1>
+      <p class="lede">This page lets users choose the predicted champion for the active tournament. No login is required to submit predictions.</p>
+    </div>
+    <img class="hero-image" src="assets/falcon-logo.png" alt="Tournament bracket illustration" loading="lazy">
+  </section>
+
+  <section class="section card-grid">
+    <article class="card">
+      <h2>How it works</h2>
+      <p>Viewers pick match winners by clicking teams on the bracket. Winners advance automatically and the completed prediction is saved locally with a shareable link.</p>
+    </article>
+    <article class="card bracket-summary-card" id="bracketDetailsCard">
+      <h2>Current tournament</h2>
+      <div id="bracketSummary"></div>
+    </article>
+  </section>
+
+  <section class="section form-card" data-admin-only hidden id="adminSetupSection">
+    <h2>ADMIN: Configure tournament</h2>
+    <p>Set up the tournament format, bracket size, and the ordered participant list.</p>
+    <form id="bracketSetupForm" class="bracket-form">
+      <div class="field-group">
+        <label for="tournamentName">Tournament name</label>
+        <input id="tournamentName" type="text" placeholder="Enter tournament title" required>
+      </div>
+      <div class="field-group">
+        <label for="tournamentFormat">Tournament format</label>
+        <select id="tournamentFormat" required>
+          <option value="Single Elimination">Single Elimination</option>
+          <option value="Double Elimination">Double Elimination</option>
+          <option value="Round Robin">Round Robin</option>
+          <option value="Free for All">Free for All</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="bracketSize">Bracket size</label>
+        <input id="bracketSize" type="number" min="2" step="1" value="8" required>
+        <p class="participant-count" id="participantCount">0 participants entered</p>
+      </div>
+      <div class="field-group">
+        <label for="participantNames">Participant names</label>
+        <textarea id="participantNames" placeholder="Enter one name per line, in bracket order" required></textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">Save bracket setup</button>
+      <p class="form-message" id="bracketFormMessage" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="section form-card" data-admin-only hidden id="adminActualSection">
+    <h2>ADMIN: Set actual result</h2>
+    <p>After the tournament finishes, choose the actual winner to score predictions on the leaderboard.</p>
+    <form id="actualResultsForm" class="bracket-form">
+      <div class="field-group">
+        <label for="actualWinner">Actual tournament winner</label>
+        <select id="actualWinner" required></select>
+      </div>
+      <button class="btn btn-primary" type="submit">Save actual result</button>
+      <p class="form-message" id="actualResultMessage" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="section" id="predictionSection">
+    <article class="card prediction-card">
+      <h2>User predictions</h2>
+      <div id="bracketStatus"></div>
+      <div id="bracketBoard" class="bracket-board"></div>
+      <div id="championPicker"></div>
+      <form id="predictionSubmitForm" class="bracket-form">
+        <div class="field-group">
+          <label for="predictionNickname">Nickname (optional)</label>
+          <input id="predictionNickname" type="text" placeholder="Enter a nickname for the leaderboard">
+        </div>
+        <button class="btn btn-primary" type="submit">Submit prediction</button>
+        <p class="form-message" id="submissionMessage" aria-live="polite"></p>
+      </form>
+      <div class="share-section" id="shareLinkContainer" hidden>
+        <p>Your prediction has a shareable link:</p>
+        <a id="shareLinkAnchor" href="#" target="_blank" rel="noopener"></a>
+      </div>
+      <div class="readonly-card" id="readOnlyPrediction" hidden></div>
+    </article>
+  </section>
+</main>
+
+<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer>
+<script src="js/main.js"></script>
+<script>
+(function() {
+  const ADMIN_BRACKET_KEY = "adminBracketData";
+  const PREDICTIONS_KEY = "bracketPredictions";
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedPredictionId = urlParams.get("predictionId");
+  const bracketBoard = document.querySelector("#bracketBoard");
+  const bracketStatus = document.querySelector("#bracketStatus");
+  const championPicker = document.querySelector("#championPicker");
+  const predictionSection = document.querySelector("#predictionSection");
+  const predictionForm = document.querySelector("#predictionSubmitForm");
+  const nicknameInput = document.querySelector("#predictionNickname");
+  const shareLinkContainer = document.querySelector("#shareLinkContainer");
+  const shareLinkAnchor = document.querySelector("#shareLinkAnchor");
+  const submissionMessage = document.querySelector("#submissionMessage");
+  const readOnlyPrediction = document.querySelector("#readOnlyPrediction");
+  const bracketSummary = document.querySelector("#bracketSummary");
+  const actualWinnerSelect = document.querySelector("#actualWinner");
+  const actualResultMessage = document.querySelector("#actualResultMessage");
+  const actualResultsForm = document.querySelector("#actualResultsForm");
+  const participantNamesInput = document.querySelector("#participantNames");
+  const participantCount = document.querySelector("#participantCount");
+  const bracketSetupForm = document.querySelector("#bracketSetupForm");
+  let bracketConfig = null;
+  let bracketState = null;
+  let championSelection = null;
+
+  function loadAdminConfig() {
+    try {
+      return JSON.parse(localStorage.getItem(ADMIN_BRACKET_KEY) || "null") || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveAdminConfig(config) {
+    localStorage.setItem(ADMIN_BRACKET_KEY, JSON.stringify(config));
+  }
+
+  function loadPredictions() {
+    try {
+      return JSON.parse(localStorage.getItem(PREDICTIONS_KEY) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  function savePredictions(predictions) {
+    localStorage.setItem(PREDICTIONS_KEY, JSON.stringify(predictions));
+  }
+
+  function getPredictionById(id) {
+    return loadPredictions().find(prediction => prediction.id === id) || null;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
+  function renderSummary(config) {
+    if (!config || !config.tournamentName || !Array.isArray(config.participants) || config.participants.length === 0) {
+      bracketSummary.innerHTML = '<p>No bracket has been configured yet. Admins can create the tournament in ADMIN MODE.</p>';
+      return;
+    }
+    const actualWinnerHtml = config.actualWinner ? `<dt>Actual winner</dt><dd>${escapeHtml(config.actualWinner)}</dd>` : '';
+    bracketSummary.innerHTML = `
+      <dl>
+        <dt>Tournament</dt><dd>${escapeHtml(config.tournamentName)}</dd>
+        <dt>Format</dt><dd>${escapeHtml(config.format)}</dd>
+        <dt>Participants</dt><dd>${config.participants.length}</dd>
+        ${actualWinnerHtml}
+      </dl>
+    `;
+  }
+
+  function buildSingleElimination(config) {
+    const participants = [...config.participants];
+    const targetSize = Math.pow(2, Math.ceil(Math.log2(participants.length)));
+    while (participants.length < targetSize) participants.push(null);
+    const rounds = [];
+    const firstRound = [];
+    for (let i = 0; i < participants.length; i += 2) {
+      firstRound.push({ id: `r0m${i / 2}`, teams: [participants[i], participants[i + 1]], winner: null });
+    }
+    rounds.push(firstRound);
+    let matchCount = firstRound.length;
+    for (let roundIndex = 1; matchCount > 1; roundIndex++) {
+      matchCount = Math.ceil(matchCount / 2);
+      const nextRound = Array.from({ length: matchCount }, (_, matchIndex) => ({
+        id: `r${roundIndex}m${matchIndex}`,
+        teams: [null, null],
+        winner: null
+      }));
+      rounds.push(nextRound);
+    }
+    return { format: config.format, rounds, finalWinner: null };
+  }
+
+  function createBracketState(config) {
+    if (!config || !config.tournamentName || !Array.isArray(config.participants) || config.participants.length === 0) {
+      return null;
+    }
+    if (config.format === "Single Elimination") {
+      const state = buildSingleElimination(config);
+      propagateBracket(state);
+      return state;
+    }
+    championSelection = null;
+    return { format: config.format, finalWinner: null };
+  }
+
+  function propagateBracket(state) {
+    if (!state || !state.rounds) return;
+    state.rounds.forEach((round, roundIndex) => {
+      if (roundIndex === 0) return;
+      round.forEach(match => {
+        match.teams = [null, null];
+        match.winner = null;
+      });
+    });
+    state.rounds.forEach((round, roundIndex) => {
+      if (roundIndex === state.rounds.length - 1) return;
+      const nextRound = state.rounds[roundIndex + 1];
+      round.forEach((match, matchIndex) => {
+        if (!match.winner) return;
+        const slot = matchIndex % 2;
+        const nextMatch = nextRound[Math.floor(matchIndex / 2)];
+        nextMatch.teams[slot] = match.winner;
+      });
+    });
+    let advanced;
+    do {
+      advanced = false;
+      state.rounds.forEach(round => {
+        round.forEach(match => {
+          if (!match.winner) {
+            const [teamA, teamB] = match.teams;
+            if (teamA && !teamB) {
+              match.winner = teamA;
+              advanced = true;
+            } else if (!teamA && teamB) {
+              match.winner = teamB;
+              advanced = true;
+            }
+          }
+        });
+      });
+      if (advanced) {
+        state.rounds.forEach((round, roundIndex) => {
+          if (roundIndex === state.rounds.length - 1) return;
+          const nextRound = state.rounds[roundIndex + 1];
+          round.forEach((match, matchIndex) => {
+            if (!match.winner) return;
+            const slot = matchIndex % 2;
+            const nextMatch = nextRound[Math.floor(matchIndex / 2)];
+            nextMatch.teams[slot] = match.winner;
+          });
+        });
+      }
+    } while (advanced);
+    const finalMatch = state.rounds[state.rounds.length - 1][0];
+    state.finalWinner = finalMatch ? finalMatch.winner : null;
+  }
+
+  function selectMatchWinner(roundIndex, matchIndex, teamIndex) {
+    const match = bracketState.rounds?.[roundIndex]?.[matchIndex];
+    if (!match) return;
+    const chosenTeam = match.teams[teamIndex];
+    if (!chosenTeam) return;
+    match.winner = chosenTeam;
+    propagateBracket(bracketState);
+    renderBracketBoard();
+    updatePredictionStatus();
+  }
+
+  function renderBracketBoard() {
+    if (!bracketState || bracketState.format !== "Single Elimination") return;
+    championPicker.innerHTML = "";
+    bracketBoard.innerHTML = "";
+    bracketState.rounds.forEach((round, roundIndex) => {
+      const column = document.createElement("div");
+      column.className = "bracket-column";
+      column.innerHTML = `<h3>Round ${roundIndex + 1}</h3>`;
+      round.forEach((match, matchIndex) => {
+        const matchEl = document.createElement("div");
+        matchEl.className = "bracket-match";
+        const teamA = match.teams[0] || 'TBD';
+        const teamB = match.teams[1] || 'TBD';
+        matchEl.innerHTML = `
+          <button type="button" class="team-button ${match.winner === teamA ? 'selected' : ''}" data-round="${roundIndex}" data-match="${matchIndex}" data-team="0">${escapeHtml(teamA)}</button>
+          <button type="button" class="team-button ${match.winner === teamB ? 'selected' : ''}" data-round="${roundIndex}" data-match="${matchIndex}" data-team="1">${escapeHtml(teamB)}</button>
+        `;
+        matchEl.querySelectorAll("button").forEach(button => {
+          if (button.textContent === 'TBD') {
+            button.disabled = true;
+          }
+          button.addEventListener("click", () => selectMatchWinner(Number(button.dataset.round), Number(button.dataset.match), Number(button.dataset.team)));
+        });
+        column.appendChild(matchEl);
+      });
+      bracketBoard.appendChild(column);
+    });
+  }
+
+  function renderChampionSelector(participants) {
+    bracketBoard.innerHTML = "";
+    championPicker.innerHTML = "";
+    const container = document.createElement("div");
+    container.className = "champion-selector";
+    container.innerHTML = `
+      <div class="field-group">
+        <label for="championChoice">Pick your predicted champion</label>
+        <select id="championChoice">
+          <option value="">Select a champion</option>
+          ${participants.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}
+        </select>
+      </div>
+    `;
+    championPicker.appendChild(container);
+    const select = container.querySelector("#championChoice");
+    if (championSelection) select.value = championSelection;
+    select.addEventListener("change", () => {
+      championSelection = select.value || null;
+      bracketState.finalWinner = championSelection;
+      updatePredictionStatus();
+    });
+  }
+
+  function updatePredictionStatus() {
+    const winner = bracketState?.finalWinner;
+    const submitButton = predictionForm.querySelector("button[type='submit']");
+    if (!winner) {
+      bracketStatus.innerHTML = '<p class="prediction-info">Choose winners until the prediction is complete.</p>';
+      if (submitButton) submitButton.disabled = true;
+      return;
+    }
+    bracketStatus.innerHTML = `<p class="prediction-info">Prediction complete. ${escapeHtml(winner)} is your picked champion.</p>`;
+    if (submitButton) submitButton.disabled = false;
+  }
+
+  function renderReadOnlyPrediction(prediction) {
+    const actualWinner = bracketConfig?.actualWinner;
+    const scoreText = actualWinner ? (prediction.finalWinner === actualWinner ? 'Correct prediction!' : 'Incorrect prediction') : 'Awaiting actual result.';
+    predictionSection.hidden = true;
+    readOnlyPrediction.hidden = false;
+    readOnlyPrediction.innerHTML = `
+      <h2>Shared prediction</h2>
+      <p><strong>Nickname:</strong> ${escapeHtml(prediction.nickname)}</p>
+      <p><strong>Prediction ID:</strong> ${escapeHtml(prediction.id)}</p>
+      <p><strong>Predicted champion:</strong> ${escapeHtml(prediction.finalWinner)}</p>
+      <p>${escapeHtml(scoreText)}</p>
+      ${actualWinner ? `<p><strong>Actual winner:</strong> ${escapeHtml(actualWinner)}</p>` : ''}
+    `;
+  }
+
+  function renderBracketPage() {
+    if (!bracketConfig || !bracketConfig.tournamentName) {
+      bracketBoard.innerHTML = '';
+      championPicker.innerHTML = '';
+      bracketStatus.innerHTML = '<p class="prediction-info">No active tournament is configured yet.</p>';
+      predictionForm.querySelector("button[type='submit']").disabled = true;
+      return;
+    }
+    if (bracketConfig.format === "Single Elimination") {
+      renderBracketBoard();
+    } else {
+      renderChampionSelector(bracketConfig.participants);
+    }
+    updatePredictionStatus();
+  }
+
+  function renderActualWinnerOptions(config) {
+    if (!config || !config.participants) return;
+    actualWinnerSelect.innerHTML = `<option value="">Choose actual winner</option>${config.participants.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}`;
+    if (config.actualWinner) {
+      actualWinnerSelect.value = config.actualWinner;
+    }
+  }
+
+  function getBasePageUrl() {
+    return `${window.location.origin}${window.location.pathname}`.replace(/\/\/$/, '/');
+  }
+
+  function handlePredictionSubmit(event) {
+    event.preventDefault();
+    const winner = bracketState?.finalWinner;
+    if (!winner) {
+      submissionMessage.textContent = "Complete the prediction before submitting.";
+      return;
+    }
+    const nickname = nicknameInput.value.trim() || "Guest";
+    const id = `pred-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const submission = {
+      id,
+      nickname,
+      submittedAt: new Date().toISOString(),
+      tournamentName: bracketConfig.tournamentName,
+      format: bracketConfig.format,
+      participants: bracketConfig.participants,
+      finalWinner: winner,
+      prediction: bracketConfig.format === "Single Elimination" ? bracketState.rounds : null
+    };
+    const submissions = loadPredictions();
+    submissions.push(submission);
+    savePredictions(submissions);
+    const shareUrl = `${getBasePageUrl()}?predictionId=${encodeURIComponent(id)}`;
+    shareLinkAnchor.href = shareUrl;
+    shareLinkAnchor.textContent = shareUrl;
+    shareLinkContainer.hidden = false;
+    submissionMessage.textContent = "Prediction submitted. Share the link to show your bracket.";
+  }
+
+  function handleActualResultsSubmit(event) {
+    event.preventDefault();
+    const actualWinner = actualWinnerSelect.value;
+    if (!actualWinner) {
+      actualResultMessage.textContent = "Choose the actual tournament winner.";
+      return;
+    }
+    bracketConfig.actualWinner = actualWinner;
+    saveAdminConfig(bracketConfig);
+    renderSummary(bracketConfig);
+    actualResultMessage.textContent = "Actual result saved. Leaderboard scoring is enabled.";
+  }
+
+  function updateParticipantCount() {
+    const participants = participantNamesInput.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    participantCount.textContent = `${participants.length} participant${participants.length === 1 ? '' : 's'} entered`;
+  }
+
+  function initializeAdminForm(config) {
+    if (!config) return;
+    document.querySelector("#tournamentName").value = config.tournamentName || "";
+    document.querySelector("#tournamentFormat").value = config.format || "Single Elimination";
+    document.querySelector("#bracketSize").value = config.bracketSize || 8;
+    participantNamesInput.value = Array.isArray(config.participants) ? config.participants.join("\n") : "";
+    updateParticipantCount();
+    renderActualWinnerOptions(config);
+    renderSummary(config);
+  }
+
+  function initializePage() {
+    bracketConfig = loadAdminConfig();
+    if (bracketConfig) {
+      bracketState = createBracketState(bracketConfig);
+    }
+    initializeAdminForm(bracketConfig);
+    if (sharedPredictionId) {
+      const sharedPrediction = getPredictionById(sharedPredictionId);
+      if (sharedPrediction) {
+        renderReadOnlyPrediction(sharedPrediction);
+      } else {
+        readOnlyPrediction.hidden = false;
+        readOnlyPrediction.innerHTML = '<p>Prediction not found for this link.</p>';
+        document.querySelector("#predictionSection").hidden = true;
+      }
+      return;
+    }
+    renderBracketPage();
+  }
+
+  if (participantNamesInput) {
+    participantNamesInput.addEventListener("input", updateParticipantCount);
+  }
+  if (bracketSetupForm) {
+    bracketSetupForm.addEventListener("submit", event => {
+      event.preventDefault();
+      const tournamentName = document.querySelector("#tournamentName").value.trim();
+      const format = document.querySelector("#tournamentFormat").value;
+      const bracketSize = Number(document.querySelector("#bracketSize").value);
+      const participants = participantNamesInput.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const messageEl = document.querySelector("#bracketFormMessage");
+      messageEl.textContent = "";
+      if (!tournamentName) {
+        messageEl.textContent = "Tournament name is required.";
+        return;
+      }
+      if (!Number.isFinite(bracketSize) || bracketSize < 2) {
+        messageEl.textContent = "Bracket size must be 2 or greater.";
+        return;
+      }
+      if (participants.length !== bracketSize) {
+        messageEl.textContent = `Enter exactly ${bracketSize} participant name${bracketSize === 1 ? '' : 's'}.`;
+        return;
+      }
+      bracketConfig = {
+        tournamentName,
+        format,
+        bracketSize,
+        participants,
+        actualWinner: bracketConfig?.actualWinner || null
+      };
+      saveAdminConfig(bracketConfig);
+      bracketState = createBracketState(bracketConfig);
+      renderSummary(bracketConfig);
+      renderActualWinnerOptions(bracketConfig);
+      renderBracketPage();
+      messageEl.textContent = "Bracket configuration saved.";
+    });
+  }
+  if (predictionForm) {
+    predictionForm.addEventListener("submit", handlePredictionSubmit);
+  }
+  if (actualResultsForm) {
+    actualResultsForm.addEventListener("submit", handleActualResultsSubmit);
+  }
+  initializePage();
+  if (typeof syncAdminControls === "function") {
+    syncAdminControls();
+  }
+})();
+</script>
+</body></html>

@@ -248,7 +248,7 @@ h3 { font-size: 1.55rem; }
 
 .choice-card-content, .card, .info-panel, .form-card { padding: var(--space-4); }
 
-.choice-card:hover, .card:hover { box-shadow: var(--shadow-glow); }
+.choice-card:hover, a.card:hover { box-shadow: var(--shadow-glow); }
 
 .feature-card {
   color: var(--color-offwhite);
@@ -265,6 +265,150 @@ h3 { font-size: 1.55rem; }
   text-decoration: underline;
   text-decoration-color: var(--color-gold);
   text-underline-offset: 0.2em;
+}
+
+.bracket-summary-card,
+.prediction-card {
+  min-height: 18rem;
+}
+
+.bracket-summary {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.bracket-summary dl {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.bracket-summary dt {
+  font-weight: 800;
+}
+
+.bracket-summary dd {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.participant-list {
+  margin-top: var(--space-4);
+}
+
+.participant-list ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--color-offwhite);
+}
+
+.bracket-form .field-group {
+  margin-bottom: var(--space-4);
+}
+
+.bracket-form select {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-offwhite);
+}
+
+.bracket-board,
+.bracket-column {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.bracket-board {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding: var(--space-3) 0;
+}
+
+.bracket-column {
+  min-width: 12rem;
+  flex: 1 0 auto;
+}
+
+.bracket-column h3 {
+  margin-bottom: var(--space-3);
+}
+
+.bracket-match {
+  display: grid;
+  gap: 0.65rem;
+  padding: var(--space-3);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+.team-button {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-offwhite);
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.team-button:hover:not(:disabled),
+.team-button.selected {
+  border-color: var(--color-gold);
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.team-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.champion-selector {
+  margin: var(--space-4) 0;
+}
+
+.share-section {
+  margin-top: var(--space-4);
+}
+
+.share-section a {
+  color: var(--color-gold);
+  word-break: break-all;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-3);
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.leaderboard-table th {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.leaderboard-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.participant-count,
+.prediction-info {
+  color: var(--color-muted);
+  margin-top: var(--space-1);
 }
 
 .section { padding: var(--space-5) 0; }
