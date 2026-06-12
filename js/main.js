@@ -1,4 +1,4 @@
-/* Main JS for navigation, demo admin login, announcement badge, and school-year calendar. */
+/* Main JS for navigation, Firebase admin login, announcement badge, and school-year calendar. */
 const navToggle = document.querySelector(".nav-toggle");
 const navLinks = document.querySelector(".nav-links");
 const adminButton = document.querySelector(".admin-button");
@@ -8,7 +8,6 @@ const adminForm = document.querySelector("#adminForm");
 let toast = document.querySelector("#toast");
 let adminStatus = document.querySelector("#adminStatus");
 let signOutButton = document.querySelector("#signOutButton");
-const demoPassword = "captain2026";
 const savedEventsKey = "adminEventScheduleData";
 const savedAnnouncementsKey = "adminAnnouncementsData";
 const savedMembersKey = "adminImportantMembersData";
@@ -83,19 +82,25 @@ if (closeDialog && adminDialog) {
 }
 
 if (adminForm) {
-  adminForm.addEventListener("submit", event => {
+  adminForm.addEventListener("submit", async event => {
     event.preventDefault();
-    const password = adminForm.querySelector("#password").value;
+    const email = adminForm.querySelector("#adminEmail")?.value || adminForm.querySelector("input[type='email']")?.value || "";
+    const password = adminForm.querySelector("#adminPassword")?.value || adminForm.querySelector("#password")?.value || "";
     const message = adminForm.querySelector(".form-message");
 
-    if (password === demoPassword) {
-      localStorage.setItem("isCaptain", "true");
-      message.textContent = "Login successful.";
-      adminDialog.close();
-      syncAdminControls();
-      showToast("Login successful. Admin mode is enabled. See ADMIN_NOTES.md for editing instructions.");
-    } else {
-      message.textContent = "Incorrect demo password.";
+    if (!window.firebaseAdminSignIn) {
+      if (message) message.textContent = "Firebase is still loading. Try again in a moment.";
+      return;
+    }
+
+    try {
+      if (message) message.textContent = "Signing in...";
+      await window.firebaseAdminSignIn(email, password);
+      if (message) message.textContent = "Login successful.";
+      adminDialog?.close();
+      adminForm.reset();
+    } catch (error) {
+      if (message) message.textContent = error?.message || "Sign-in failed.";
     }
   });
 }
@@ -132,6 +137,9 @@ function syncAdminControls() {
 
 function signOutAdmin() {
   localStorage.removeItem("isCaptain");
+  if (window.firebaseAdminSignOut) {
+    window.firebaseAdminSignOut();
+  }
   syncAdminControls();
   closeAddGameMenu();
   closeAddAnnouncementMenu();
@@ -143,6 +151,11 @@ function signOutAdmin() {
 if (signOutButton) {
   signOutButton.addEventListener("click", signOutAdmin);
 }
+
+window.addEventListener("firebase-admin-state-changed", syncAdminControls);
+window.addEventListener("firebase-site-data-updated", () => {
+  reloadSharedSiteData();
+});
 
 const schoolYearMonths = [
   { year: 2026, month: 8, label: "September 2026" },
@@ -260,6 +273,7 @@ function eventsForType(type) {
 }
 
 function renderSelectedMonth() {
+  if (!calendarRoot) return;
   const type = calendarRoot.dataset.calendar;
   const month = schoolYearMonths[currentMonthIndex];
   renderCalendar(calendarRoot, month.year, month.month, eventsForType(type));
@@ -820,6 +834,9 @@ function setupAddQAMenu() {
 function loadSavedFAQ() {
   if (!faqListRoot) return;
   try {
+    for (let index = faqData.length - 1; index >= 0; index--) {
+      if (faqData[index]?.adminAdded) faqData.splice(index, 1);
+    }
     const saved = JSON.parse(localStorage.getItem(qaSaveKey) || "[]");
     if (Array.isArray(saved)) {
       faqData.push(...saved.map(item => ({ ...item, adminAdded: true })));
@@ -1396,6 +1413,8 @@ function clearGamePickerSelection() {
 
 function loadSavedAdminEvents() {
   try {
+    eventData.competitive = eventData.competitive.filter(event => !event.adminAdded);
+    eventData.casual = eventData.casual.filter(event => !event.adminAdded);
     const savedData = JSON.parse(localStorage.getItem(savedEventsKey) || "{}");
     if (Array.isArray(savedData)) {
       eventData.competitive.push(...savedData);
@@ -1406,6 +1425,23 @@ function loadSavedAdminEvents() {
   } catch {
     localStorage.removeItem(savedEventsKey);
   }
+}
+
+function reloadSharedSiteData() {
+  loadSavedAdminEvents();
+  loadSavedFAQ();
+  loadSavedVideoHighlights();
+  loadSavedClipWeeks();
+  loadSavedAnnouncements();
+  loadSavedImportantMembers();
+  renderScheduleLists();
+  if (calendarRoot) renderSelectedMonth();
+  renderFAQList();
+  updateVideoHighlightsUI();
+  renderAnnouncements();
+  renderImportantMembers();
+  renderClipWeeks();
+  updateAnnouncementBadge();
 }
 
 function saveAdminEvents() {
