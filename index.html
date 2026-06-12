@@ -75,8 +75,8 @@
 
 <section class="section">
   <article class="card announcement priority-announcement">
-    <h2>Recent Announcement</h2>
-    <p><strong>June Update:</strong> Varsity tryout information and casual meeting suggestions are now open.</p>
+    <h2 id="announcement-title">Recent Announcement</h2>
+    <p id="announcement-content">Loading the latest update from the database...</p>
     <a href="announcements.html">View all announcements</a>
   </article>
 </section>
@@ -98,4 +98,56 @@
   </article>
 </section>
 </main>
-<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer><script src="js/main.js"></script></body></html>
+<footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer>
+
+<script src="js/main.js"></script>
+
+<script type="module" src="js/admin.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JO17rKBE0XkpvI",
+    authDomain: "phs-esports-5fce8.firebaseapp.com",
+    projectId: "phs-esports-5fce8",
+    storageBucket: "phs-esports-5fce8.firebasestorage.app",
+    messagingSenderId: "628629574347",
+    appId: "1:628629574347:web:0f0b9ffbec602b0465c14e",
+    measurementId: "G-7YL5S8H4YV"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const contentElement = document.getElementById("announcement-content");
+
+if (contentElement) {
+    // 1. Create a dynamic tracking attribute that blocks local storage overrides
+    const observer = new MutationObserver(() => {
+      const liveText = contentElement.getAttribute("data-live-text");
+      if (liveText && contentElement.innerText !== liveText) {
+        contentElement.innerText = liveText;
+      }
+    });
+    observer.observe(contentElement, { childList: true, characterData: true });
+
+    onSnapshot(doc(db, "announcements", "schedule_info"), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().text) {
+        const cloudMessage = docSnap.data().text;
+        // 2. Lock the cloud text into the element attributes
+        contentElement.setAttribute("data-live-text", cloudMessage);
+        contentElement.innerText = cloudMessage;
+      } else {
+        contentElement.innerText = "No current announcements found.";
+      }
+    }, (error) => {
+      console.error("Error reading live database values:", error);
+    });
+  }
+  
+</script>
+
+<script src="js/main.js"></script>
+<script type="module" src="js/admin.js"></script>
