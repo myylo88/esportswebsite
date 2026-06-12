@@ -384,27 +384,6 @@ h3 { font-size: 1.55rem; }
   word-break: break-all;
 }
 
-.leaderboard-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: var(--space-3);
-}
-
-.leaderboard-table th,
-.leaderboard-table td {
-  padding: var(--space-3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.leaderboard-table th {
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.leaderboard-table tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
 .participant-count,
 .prediction-info {
   color: var(--color-muted);
