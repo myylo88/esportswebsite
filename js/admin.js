@@ -16,8 +16,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JO17rKBE0XkpvI",
+  apiKey: "AIzaSyDdjRu_pI_Jcu5Jq8P03JOl7rKBE0XkpvI",
   authDomain: "phs-esports-5fce8.firebaseapp.com",
+  databaseURL: "https://phs-esports-5fce8-default-rtdb.firebaseio.com",
   projectId: "phs-esports-5fce8",
   storageBucket: "phs-esports-5fce8.firebasestorage.app",
   messagingSenderId: "628629574347",
