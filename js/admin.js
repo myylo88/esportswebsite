@@ -27,7 +27,7 @@ const firebaseConfig = {
 
 // Add every admin account that should be allowed to edit the website.
 const allowedAdminEmails = [
-  "your-admin-email@gmail.com"
+  "jainavaneeth@gmail.com"
 ];
 
 const managedStorageKeys = [
