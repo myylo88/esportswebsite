@@ -243,49 +243,28 @@
       if (roundIndex === 0) return;
       round.forEach(match => {
         match.teams = [null, null];
-        match.winner = null;
       });
     });
     state.rounds.forEach((round, roundIndex) => {
-      if (roundIndex === state.rounds.length - 1) return;
-      const nextRound = state.rounds[roundIndex + 1];
       round.forEach((match, matchIndex) => {
-        if (!match.winner) return;
+        if (match.winner && !match.teams.includes(match.winner)) {
+          match.winner = null;
+        }
+        if (!match.winner) {
+          const [teamA, teamB] = match.teams;
+          if (teamA && !teamB) {
+            match.winner = teamA;
+          } else if (!teamA && teamB) {
+            match.winner = teamB;
+          }
+        }
+        if (!match.winner || roundIndex === state.rounds.length - 1) return;
+        const nextRound = state.rounds[roundIndex + 1];
         const slot = matchIndex % 2;
         const nextMatch = nextRound[Math.floor(matchIndex / 2)];
         nextMatch.teams[slot] = match.winner;
       });
     });
-    let advanced;
-    do {
-      advanced = false;
-      state.rounds.forEach(round => {
-        round.forEach(match => {
-          if (!match.winner) {
-            const [teamA, teamB] = match.teams;
-            if (teamA && !teamB) {
-              match.winner = teamA;
-              advanced = true;
-            } else if (!teamA && teamB) {
-              match.winner = teamB;
-              advanced = true;
-            }
-          }
-        });
-      });
-      if (advanced) {
-        state.rounds.forEach((round, roundIndex) => {
-          if (roundIndex === state.rounds.length - 1) return;
-          const nextRound = state.rounds[roundIndex + 1];
-          round.forEach((match, matchIndex) => {
-            if (!match.winner) return;
-            const slot = matchIndex % 2;
-            const nextMatch = nextRound[Math.floor(matchIndex / 2)];
-            nextMatch.teams[slot] = match.winner;
-          });
-        });
-      }
-    } while (advanced);
     const finalMatch = state.rounds[state.rounds.length - 1][0];
     state.finalWinner = finalMatch ? finalMatch.winner : null;
   }
