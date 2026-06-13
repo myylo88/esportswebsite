@@ -19,7 +19,7 @@
 </header>
 <dialog id="adminDialog">
   <h2>Captain Login</h2>
-  <p>This demo login shows a success message. For real private editing, use a backend or CMS.</p>
+  <p>Sign in with an approved admin email or Google account to edit the site.</p>
   <form id="adminForm">
     <label for="password">Password</label>
     <input id="password" type="password" autocomplete="current-password" required>
@@ -119,7 +119,7 @@
 </main>
 
 <footer class="site-footer"><div class="footer-inner"><p><strong>Esports Team & Club Website</strong></p><p>Built for PHS competitive Rocket League players, casual club members, and future students interested in joining.</p></div></footer>
-<script src="js/main.js"></script>
+<script src="js/main.js"></script><script type="module" src="js/admin.js?v=20260612-auth2"></script>
 <script>
 (function() {
   const ADMIN_BRACKET_KEY = "adminBracketData";
@@ -512,6 +512,7 @@
     actualResultsForm.addEventListener("submit", handleActualResultsSubmit);
   }
   initializePage();
+  window.addEventListener("firebase-site-data-updated", initializePage);
   if (typeof syncAdminControls === "function") {
     syncAdminControls();
   }
